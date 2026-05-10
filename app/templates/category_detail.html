@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ shop.name }} &middot; {{ category.name }} Products</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css') }}">
+</head>
+<body class="category-detail-body">
+  <main class="category-detail-main">
+    <header class="category-detail-hero">
+      <div>
+        <p class="eyebrow">Category Overview</p>
+        <h1>{{ category.name }}</h1>
+        <p class="muted">Part of {{ shop.name }} &middot; {{ products|length }} product{{ '' if products|length == 1 else 's' }}</p>
+      </div>
+      <div class="detail-actions">
+        <a class="btn btn-soft" href="{{ url_for('manager.dashboard') }}">Back to Dashboard</a>
+      </div>
+    </header>
+
+    {% set low_stock = products | selectattr('quantity', 'gt', 0) | selectattr('quantity', 'lt', 6) | list %}
+    {% set out_stock = products | selectattr('quantity', 'equalto', 0) | list %}
+
+    <section class="category-detail-card info-card">
+      <div class="category-detail-info">
+        <div>
+          <h2>{{ category.name }} inventory</h2>
+          <p class="muted">Track performance for this collection at a glance.</p>
+        </div>
+        <div class="pill detail-pill">
+          {{ products|length }} {{ 'item' if products|length == 1 else 'items' }}
+        </div>
+      </div>
+      <div class="category-detail-stats">
+        <article>
+          <p class="muted tiny">Low stock</p>
+          <p class="stat">{{ low_stock|length }}</p>
+          <p class="muted mini">Needs attention soon</p>
+        </article>
+        <article>
+          <p class="muted tiny">Out of stock</p>
+          <p class="stat">{{ out_stock|length }}</p>
+          <p class="muted mini">Restock immediately</p>
+        </article>
+        <article>
+          <p class="muted tiny">In stock</p>
+          <p class="stat">{{ products|length - out_stock|length }}</p>
+          <p class="muted mini">Available to sell</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="category-detail-card">
+      <div class="card-head">
+        <div>
+          <h2>Products</h2>
+          <p class="muted">Browse, edit, or remove items without leaving this page.</p>
+        </div>
+        <div class="category-detail-filter">
+          <label>
+            <span>Search</span>
+            <input type="search" id="categoryProductSearch" placeholder="Filter by name or brand" autocomplete="off">
+          </label>
+        </div>
+      </div>
+
+      {% if products %}
+        <div class="table-shell">
+          <table class="table fixed product-table category-product-table">
+            <thead>
+              <tr>
+                <th>Sr</th>
+                <th>Product</th>
+                <th>Brand</th>
+                <th>Stock</th>
+                <th class="table-actions">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in products %}
+                {% set stock_state = 'ok' %}
+                {% set stock_label = 'Healthy stock' %}
+                {% if p.quantity == 0 %}
+                  {% set stock_state = 'out' %}
+                  {% set stock_label = 'Out of stock' %}
+                {% elif p.quantity <= 5 %}
+                  {% set stock_state = 'low' %}
+                  {% set stock_label = 'Low stock' %}
+                {% endif %}
+                <tr class="category-product-row"
+                    data-category-product
+                    data-product-name="{{ p.name | lower }}"
+                    data-product-brand="{{ (p.brand_name or '') | lower }}"
+                    data-product-stock="{{ stock_state }}">
+                  <td class="product-sr-cell">{{ loop.index }}</td>
+                  <td>
+                    <div class="product-name">
+                      <span>{{ p.name }}</span>
+                      <span class="muted mini">{{ stock_label }}</span>
+                    </div>
+                  </td>
+                  <td>{{ p.brand_name or 'No brand' }}</td>
+                  <td>
+                    <span class="pill
+                      {% if p.quantity == 0 %}warn
+                      {% elif p.quantity <= 5 %}low
+                      {% else %}ok
+                      {% endif %}">
+                      {{ p.quantity }} units
+                    </span>
+                  </td>
+                  <td class="table-actions">
+                    <div class="row-actions">
+                      <button class="icon-btn icon-edit" type="button" aria-label="Edit {{ p.name }}"
+                              data-edit-product
+                              data-product-id="{{ p.id }}"
+                              data-product-name="{{ p.name }}"
+                              data-product-brand="{{ p.brand_id or '' }}"
+                              data-product-category="{{ p.category_id or '' }}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm13.71-9.04 1.83-1.83a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z" fill="currentColor"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty mini">
+          <div class="empty-art">??</div>
+          <p>No products in this category yet.</p>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+
+  <button class="fab detail-fab" id="addProductFab" title="Add product">+</button>
+
+  <div class="modal-backdrop" data-modal id="addProductModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <p class="modal-title">Add product</p>
+          <p class="modal-sub">Register a new item inside {{ category.name }}.</p>
+        </div>
+        <button class="icon-btn" type="button" data-modal-close>&times;</button>
+      </div>
+      <form class="modal-body" method="post" action="{{ url_for('manager.create_product') }}">
+        <input type="hidden" name="return_to" value="category:{{ category.id }}">
+        <input type="hidden" name="product_category_id" value="{{ category.id }}">
+        <label class="field">
+          <span>Name</span>
+          <input name="product_name" placeholder="Product name" required>
+        </label>
+        <label class="field">
+          <span>Minimum stock to maintain</span>
+          <input name="product_reorder_level" type="number" min="0" value="3" required>
+        </label>
+        <label class="field">
+          <span>Brand</span>
+          <select name="product_brand_id">
+            <option value="">No brand</option>
+            {% for brand in brands %}
+              <option value="{{ brand.id }}">{{ brand.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn-soft" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn-primary" type="submit">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" data-modal id="editProductModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <p class="modal-title">Edit product</p>
+          <p class="modal-sub">Update details for this item.</p>
+        </div>
+        <button class="icon-btn" type="button" data-modal-close>&times;</button>
+      </div>
+      <form class="modal-body" method="post" action="{{ url_for('manager.update_product') }}" id="editProductForm">
+        <input type="hidden" name="edit_product_id" id="editProductId">
+        <input type="hidden" name="return_to" value="category:{{ category.id }}">
+        <label class="field">
+          <span>Name</span>
+          <input name="edit_product_name" id="editProductName" required>
+        </label>
+        <label class="field">
+          <span>Brand</span>
+          <select name="edit_product_brand_id" id="editProductBrand">
+            <option value="">No brand</option>
+            {% for brand in brands %}
+              <option value="{{ brand.id }}">{{ brand.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <select name="edit_product_category_id" id="editProductCategory" required>
+            <option value="">Select category</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}" {% if cat.id == category.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn-soft" type="button" data-modal-close>Cancel</button>
+          <button class="btn btn-primary" type="submit">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const modals = document.querySelectorAll('[data-modal]');
+    const openModal = modal => modal && modal.classList.add('show');
+    const closeModal = modal => modal && modal.classList.remove('show');
+
+    document.querySelectorAll('[data-modal-close]').forEach(btn => {
+      btn.addEventListener('click', () => closeModal(btn.closest('[data-modal]')));
+    });
+
+    modals.forEach(backdrop => {
+      backdrop.addEventListener('click', evt => {
+        if (evt.target === backdrop) {
+          closeModal(backdrop);
+        }
+      });
+    });
+
+    const addFab = document.getElementById('addProductFab');
+    const addModal = document.getElementById('addProductModal');
+    if (addFab && addModal) {
+      addFab.addEventListener('click', () => openModal(addModal));
+    }
+
+    const editModal = document.getElementById('editProductModal');
+    const editId = document.getElementById('editProductId');
+    const editName = document.getElementById('editProductName');
+    const editBrand = document.getElementById('editProductBrand');
+    const editCategory = document.getElementById('editProductCategory');
+
+    document.querySelectorAll('[data-edit-product]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!editModal) return;
+        editId.value = btn.dataset.productId || '';
+        editName.value = btn.dataset.productName || '';
+        editBrand.value = btn.dataset.productBrand || '';
+        editCategory.value = btn.dataset.productCategory || '';
+        openModal(editModal);
+      });
+    });
+
+    document.addEventListener('keydown', evt => {
+      if (evt.key === 'Escape') {
+        modals.forEach(closeModal);
+      }
+    });
+
+    const categoryProductSearch = document.getElementById('categoryProductSearch');
+    const categoryProductRows = document.querySelectorAll('[data-category-product]');
+    if (categoryProductSearch && categoryProductRows.length) {
+      const filterCategoryProducts = () => {
+        const term = categoryProductSearch.value.trim().toLowerCase();
+        let visible = 0;
+        categoryProductRows.forEach(row => {
+          const name = row.dataset.productName || '';
+          const brand = row.dataset.productBrand || '';
+          const matches = !term || name.includes(term) || brand.includes(term);
+          row.classList.toggle('hidden', !matches);
+          if (matches) visible += 1;
+        });
+      };
+      categoryProductSearch.addEventListener('input', filterCategoryProducts);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<section class="category-detail-card info-card">
+      <div class="category-detail-info">
+        <div>
+          <h2>Restock runs</h2>
+          <p class="muted">Each restock time with its item details.</p>
+        </div>
+      </div>
+      {% if restock_runs %}
+        <div class="category-detail-stats">
+          {% for run in restock_runs %}
+            <article>
+              <p class="muted tiny">Run time</p>
+              <p class="stat">{{ run.created_at|human_time }}</p>
+              <p class="muted mini">{{ run.total_items }} items ? PKR {{ '%.2f'|format(run.total_purchase) }}</p>
+            </article>
+          {% endfor %}
+        </div>
+        {% for run in restock_runs %}
+          <div class="table-shell" style="margin-top:12px;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th colspan="6">Restock at {{ run.created_at|human_time }}</th>
+                </tr>
+                <tr>
+                  <th>Sr.</th>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Purchase rate</th>
+                  <th>Total purchase</th>
+                  <th>Sale price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in run.entries %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ entry.product_name }}</td>
+                    <td>{{ entry.quantity }} units</td>
+                    <td>PKR {{ '%.2f'|format(entry.purchase_rate) }}</td>
+                    <td>PKR {{ '%.2f'|format(entry.quantity * entry.purchase_rate) }}</td>
+                    <td>PKR {{ '%.2f'|format(entry.sale_price) }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty mini">
+          <div class="empty-art">????</div>
+          <p>No restock runs recorded for this date.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="category-detail-card table-card">
+      <div class="card-head">
+        <div>
+          <h2>Restock details</h2>
+          <p class="muted">Line-by-line summary of items added on {{ batch_date|human_date }}.</p>
+        </div>
+        <div class="category-detail-filter">
+          <span class="muted tiny">Filter</span>
+          <label>
+            <span>Recorded time</span>
+            <select id="restockTimeSelect">
+              <option value="">All times</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {% if entries %}
+        <div class="table-shell">
+          <table class="table" id="restockEntryTable">
+            <thead>
+              <tr>
+                <th>Sr.</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Purchase rate</th>
+                <th>Total purchase</th>
+                <th>Sale price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in entries %}
+                <tr data-product-name="{{ entry.product_name | lower }}" data-created-at="{{ entry.created_at|human_time('%H:%M') }}">
+                  <td>{{ loop.index }}</td>
+                  <td>{{ entry.product_name }}</td>
+                  <td>{{ entry.quantity }} units</td>
+                  <td>PKR {{ '%.2f'|format(entry.purchase_rate) }}</td>
+                  <td>PKR {{ '%.2f'|format(entry.quantity * entry.purchase_rate) }}</td>
+                  <td>PKR {{ '%.2f'|format(entry.sale_price) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty mini">
+          <div class="empty-art">📦</div>
+          <p>No entries recorded for this restock.</p>
+        </div>
+      {% endif %}
+    </section>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ shop.name }} &middot; Restock {{ batch_date|human_date }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css') }}">
+</head>
+<body class="category-detail-body">
+  <main class="category-detail-main">
+    <div class="detail-actions">
+      <a class="btn btn-soft" href="{{ url_for('manager.dashboard') }}">Back to Dashboard</a>
+    </div>
+    {% set total_items = entries|length %}
+
+    <section class="category-detail-card info-card">
+      <div class="category-detail-info">
+        <div>
+          <h2>Restock metrics</h2>
+          <p class="muted">Snapshot for the {{ batch_date|human_date }} restock run.</p>
+        </div>
+      </div>
+      <div class="category-detail-stats">
+        <article>
+          <p class="muted tiny">Products</p>
+          <p class="stat">{{ total_items }}</p>
+          <p class="muted mini">Items restocked</p>
+        </article>
+        <article>
+          <p class="muted tiny">Restock runs</p>
+          <p class="stat">{{ restock_runs|length }}</p>
+          <p class="muted mini">Times restocked on {{ batch_date|human_date }}</p>
+        </article>
+        <article>
+          <p class="muted tiny">Total purchase</p>
+          <p class="stat">PKR {{ '%.2f'|format(total_purchase) }}</p>
+          <p class="muted mini">Sum of quantity × rate</p>
+        </article>
+      </div>
+    </section>
+
+
+    <section class="category-detail-card info-card">
+      <div class="category-detail-info">
+        <div>
+          <h2>Restock runs</h2>
+          <p class="muted">Times restocked on {{ batch_date|human_date }}.</p>
+        </div>
+      </div>
+      {% if restock_runs %}
+        <div class="category-detail-stats">
+          {% for run in restock_runs %}
+            <article>
+              <p class="muted tiny">Run time</p>
+              <p class="stat">{{ run.created_at|human_time }}</p>
+              <p class="muted mini">{{ run.total_items }} items · PKR {{ '%.2f'|format(run.total_purchase) }}</p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty mini">
+          <div class="empty-art">ðŸ“¦</div>
+          <p>No restock runs recorded for this date.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="category-detail-card table-card">
+      <div class="card-head">
+        <div>
+          <h2>Restock details</h2>
+          <p class="muted">Line-by-line summary of items added on {{ batch_date|human_date }}.</p>
+        </div>
+        <div class="category-detail-filter">
+          <span class="muted tiny">Filter</span>
+          <label>
+            <span>Recorded time</span>
+            <select id="restockTimeSelect">
+              <option value="">All times</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {% if entries %}
+        <div class="table-shell">
+          <table class="table" id="restockEntryTable">
+            <thead>
+              <tr>
+                <th>Sr.</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Purchase rate</th>
+                <th>Total purchase</th>
+                <th>Sale price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in entries %}
+                <tr data-product-name="{{ entry.product_name | lower }}" data-created-at="{{ entry.created_at|human_time('%H:%M') }}">
+                  <td>{{ loop.index }}</td>
+                  <td>{{ entry.product_name }}</td>
+                  <td>{{ entry.quantity }} units</td>
+                  <td>PKR {{ '%.2f'|format(entry.purchase_rate) }}</td>
+                  <td>PKR {{ '%.2f'|format(entry.quantity * entry.purchase_rate) }}</td>
+                  <td>PKR {{ '%.2f'|format(entry.sale_price) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty mini">
+          <div class="empty-art">📦</div>
+          <p>No entries recorded for this restock.</p>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+
+  <script>
+    const restockTimeSelect = document.getElementById('restockTimeSelect');
+    const restockTableRows = document.querySelectorAll('#restockEntryTable tbody tr');
+
+    const extractRowTime = (row) => (row.dataset.createdAt || '').slice(0, 5);
+
+    const toDisplayTime = (value) => {
+      if (!value) return '';
+      const parts = value.split(':');
+      if (parts.length < 2) return value;
+      let hours = Number(parts[0]);
+      const minutes = parts[1];
+      if (!Number.isFinite(hours)) return value;
+      const suffix = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${hours}:${minutes} ${suffix}`;
+    };
+
+    if (restockTableRows.length && restockTimeSelect) {
+      const uniqueTimes = new Set();
+      restockTableRows.forEach(row => {
+        const time = extractRowTime(row);
+        if (time) {
+          uniqueTimes.add(time);
+        }
+      });
+      [...uniqueTimes].sort().forEach(time => {
+        const option = document.createElement('option');
+        option.value = time;
+        option.textContent = toDisplayTime(time);
+        restockTimeSelect.appendChild(option);
+      });
+
+      const filterRows = () => {
+        const timeFilter = restockTimeSelect.value || '';
+        restockTableRows.forEach(row => {
+          const rowTime = extractRowTime(row);
+          const matchesTime = !timeFilter || rowTime === timeFilter;
+          row.style.display = matchesTime ? '' : 'none';
+        });
+      };
+      restockTimeSelect.addEventListener('change', filterRows);
+    }
+  </script>
+</body>
+</html>

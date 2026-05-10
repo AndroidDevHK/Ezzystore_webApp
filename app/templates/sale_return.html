@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ shop.name }} &middot; Return items</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css') }}">
+</head>
+<body class="category-detail-body">
+  <main class="category-detail-main sale-return-page">
+    <div class="detail-actions">
+      <a class="btn btn-soft" href="{{ back_url }}">Back</a>
+    </div>
+
+    <section class="category-detail-card info-card sale-return-summary">
+      <div class="category-detail-info">
+        <div>
+          <h2>Return items</h2>
+          <p class="muted">Select quantities to return to stock for sale #{{ sale.id }}.</p>
+        </div>
+      </div>
+      <div class="category-detail-stats">
+        <article>
+          <p class="muted tiny">Sale date</p>
+          <p class="stat">{{ sale.created_at|human_datetime }}</p>
+          <p class="muted mini">Reference time</p>
+        </article>
+        <article>
+          <p class="muted tiny">Customer</p>
+          <p class="stat">{{ sale.customer_name or "Walk-in" }}</p>
+          <p class="muted mini">{{ sale.customer_phone or "" }}</p>
+        </article>
+        <article>
+          <p class="muted tiny">Returnable items</p>
+          <p class="stat">{{ return_items|length }}</p>
+          <p class="muted mini">Items with remaining qty</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="category-detail-card table-card sale-return-card">
+      <div class="card-head">
+        <div>
+          <h2>Return form</h2>
+          <p class="muted">Pick items and confirm quantities before submitting.</p>
+        </div>
+      </div>
+
+      {% if return_items %}
+        <form method="post" action="{{ url_for('manager.sale_return', sale_id=sale.id) }}" class="sale-return-form">
+          {% if return_to %}
+            <input type="hidden" name="return_to" value="{{ return_to }}">
+          {% endif %}
+          <div class="table-shell">
+            <table class="table sale-return-table">
+              <thead>
+                <tr>
+                  <th>Sr.</th>
+                  <th>Item</th>
+                  <th>Total qty</th>
+                  <th>Return qty</th>
+                  <th>Select</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in return_items %}
+                  <tr class="sale-return-row" data-entry="sale-return-item-{{ item.id }}">
+                    <td class="product-sr-cell">{{ loop.index }}</td>
+                    <td>
+                      <div class="sale-return-item-name">{{ item.product_name }}</div>
+                    </td>
+                    <td class="sale-return-total-cell">{{ item.quantity }}</td>
+                    <td>
+                      <div class="sale-return-qty-cell">
+                        <input type="number"
+                               name="return_quantity[]"
+                               min="1"
+                               max="{{ item.remaining_quantity }}"
+                               value="{{ item.remaining_quantity }}"
+                               required
+                               data-sale-return-field="sale-return-item-{{ item.id }}"
+                               data-qty-locked="{{ 1 if item.remaining_quantity <= 1 else 0 }}"
+                               {% if item.remaining_quantity <= 1 %}disabled{% endif %}>
+                      </div>
+                      {% if item.remaining_quantity <= 1 %}
+                        <input type="hidden"
+                               name="return_quantity[]"
+                               value="{{ item.remaining_quantity }}"
+                               data-sale-return-field="sale-return-item-{{ item.id }}"
+                               disabled>
+                      {% endif %}
+                      <input type="hidden" name="return_sale_item_id[]" value="{{ item.id }}" data-sale-return-field="sale-return-item-{{ item.id }}" disabled>
+                    </td>
+                    <td class="sale-return-check-cell">
+                      <input type="checkbox" class="sale-return-toggle" data-entry="sale-return-item-{{ item.id }}">
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <label class="confirm-return-checkbox sale-return-confirm">
+            <input type="checkbox" id="saleReturnConfirm">
+            <span>I confirm these items are being returned by the customer.</span>
+          </label>
+
+          <div class="modal-actions">
+            <a class="btn btn-soft" href="{{ back_url }}">Cancel</a>
+            <button class="btn btn-primary" id="saleReturnSubmit" type="submit" disabled>Submit return</button>
+          </div>
+        </form>
+      {% else %}
+        <div class="empty mini">
+          <div class="empty-art">&#x21ba;</div>
+          <p>All items from this sale have already been returned.</p>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+
+  <script>
+    const saleReturnConfirm = document.getElementById("saleReturnConfirm");
+    const saleReturnSubmit = document.getElementById("saleReturnSubmit");
+    const preselectId = {{ preselect_item_id|tojson }};
+    const preselectEntry = preselectId ? `sale-return-item-${preselectId}` : null;
+
+    const setRowState = (entryId, checked)=>{
+      document.querySelectorAll(`[data-sale-return-field="${entryId}"]`).forEach(input=>{
+        const lockedQty = input.dataset.qtyLocked === "1";
+        if(lockedQty && input.type === "number"){
+          input.disabled = true;
+          return;
+        }
+        input.disabled = !checked;
+      });
+    };
+
+    const refreshReturnButtonState = ()=>{
+      if(!saleReturnSubmit){
+        return;
+      }
+      const selected = document.querySelector(".sale-return-toggle:checked");
+      saleReturnSubmit.disabled = !(saleReturnConfirm?.checked && selected);
+    };
+
+    document.querySelectorAll(".sale-return-toggle").forEach(toggle=>{
+      const entryId = toggle.dataset.entry;
+      if(!entryId){
+        return;
+      }
+      const shouldSelect = preselectEntry && entryId === preselectEntry;
+      if(shouldSelect){
+        toggle.checked = true;
+      }
+      setRowState(entryId, toggle.checked);
+      toggle.addEventListener("change", ()=>{
+        setRowState(entryId, toggle.checked);
+        refreshReturnButtonState();
+      });
+    });
+
+    if(preselectId){
+      const row = document.querySelector(`[data-entry="${preselectEntry}"]`);
+      row?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    saleReturnConfirm?.addEventListener("change", refreshReturnButtonState);
+    refreshReturnButtonState();
+  </script>
+</body>
+</html>

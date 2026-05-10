@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Zong">
+  <defs>
+    <linearGradient id="zongBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#zongBg)"/>
+  <circle cx="32" cy="32" r="18" fill="none" stroke="#dcfce7" stroke-width="4"/>
+  <text x="32" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#f0fdf4">ZONG</text>
+</svg>
