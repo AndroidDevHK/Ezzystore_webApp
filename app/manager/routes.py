@@ -1104,6 +1104,8 @@ def _build_manager_context(db, shop, active_page: str, daily_report_day: str | N
     report_sales = []
     report_daily_summary = []
     report_search_performed = False
+    reports_available_dates = []
+    reports_selected_day = ""
 
     def _parse_report_date(raw_value, default_value):
         if not raw_value:
@@ -1114,19 +1116,38 @@ def _build_manager_context(db, shop, active_page: str, daily_report_day: str | N
             return default_value
 
     if active_page == "reports":
-        # Check if user has actually provided date parameters.
-        start_param = request.args.get("sales_report_start")
-        end_param = request.args.get("sales_report_end")
-        report_search_performed = bool(start_param or end_param)
+        reports_available_dates = _daily_report_available_dates(db, shop["id"], today_iso)
+        
+        # Check if day is explicitly provided via dropdown
+        raw_day = request.args.get("day", "").strip()
+        selected_day = None
+        if raw_day:
+            try:
+                selected_day = datetime.strptime(raw_day, "%Y-%m-%d").date().isoformat()
+            except ValueError:
+                selected_day = None
 
-        if report_search_performed:
-            report_start_date = _parse_report_date(start_param, today)
-            report_end_date = _parse_report_date(end_param, report_start_date)
+        if not selected_day:
+            start_param = request.args.get("sales_report_start")
+            end_param = request.args.get("sales_report_end")
+            if start_param or end_param:
+                report_start_date = _parse_report_date(start_param, today)
+                report_end_date = _parse_report_date(end_param, report_start_date)
+                selected_day = report_start_date.isoformat()
+            else:
+                # Default to the most recent date from available_dates
+                if reports_available_dates:
+                    selected_day = reports_available_dates[0]
+                else:
+                    selected_day = today_iso
+                report_start_date = datetime.strptime(selected_day, "%Y-%m-%d").date()
+                report_end_date = report_start_date
         else:
-            # Default to the last 7 days so reports are never empty on load.
-            report_end_date = today
-            report_start_date = today - timedelta(days=6)
-            report_search_performed = True
+            report_start_date = datetime.strptime(selected_day, "%Y-%m-%d").date()
+            report_end_date = report_start_date
+
+        report_search_performed = True
+        reports_selected_day = selected_day
 
         if report_end_date < report_start_date:
             report_end_date = report_start_date
@@ -1206,6 +1227,8 @@ def _build_manager_context(db, shop, active_page: str, daily_report_day: str | N
         "report_start": report_start_iso,
         "report_end": report_end_iso,
         "report_search_performed": report_search_performed,
+        "reports_available_dates": reports_available_dates,
+        "reports_selected_day": reports_selected_day,
         "customers": customers_serialized,
         "customer_insights": customer_insights,
         "today_iso": today_iso,
@@ -2389,6 +2412,106 @@ def add_easyload_entry():
     return redirect(return_url)
 
 
+
+@manager_bp.route("/system-cash/transfer", methods=["POST"])
+@manager_required
+def transfer_cash():
+    db = get_db()
+    shop = _get_manager_shop(db)
+    if not shop:
+        flash("No shop assigned.", "error")
+        return redirect(url_for("auth.logout"))
+
+    amount_raw = request.form.get("amount", "").strip()
+    source = request.form.get("source", "").strip().lower()
+    target = request.form.get("target", "").strip().lower()
+    note = request.form.get("note", "").strip()
+    return_url_raw = request.form.get("return_url", "").strip()
+    return_url = _safe_manager_return_url(return_url_raw) or url_for("manager.dashboard")
+
+    CASH_BUCKETS = ("counter", "online")
+    WALLET_CHANNELS = ServiceTransaction.WALLET_CHANNELS  # e.g. ("easypaisa", "jazzcash")
+    ALL_SOURCES = list(CASH_BUCKETS) + list(WALLET_CHANNELS)
+
+    SOURCE_LABELS = {
+        "counter": "Counter Cash",
+        "online": "Online Cash",
+        "easypaisa": "Easypaisa Wallet",
+        "jazzcash": "JazzCash Wallet",
+    }
+
+    def _err(msg):
+        flash(msg, "error")
+        return redirect(return_url)
+
+    if source not in ALL_SOURCES:
+        return _err("Invalid transfer source selected.")
+    if target not in ALL_SOURCES:
+        return _err("Invalid transfer destination selected.")
+    if source == target:
+        return _err("Source and destination cannot be the same.")
+
+    try:
+        amount = float(amount_raw)
+        if amount <= 0:
+            raise ValueError
+    except ValueError:
+        return _err("Enter a valid transfer amount greater than zero.")
+
+    if not note:
+        note = f"Transfer from {SOURCE_LABELS.get(source, source)} to {SOURCE_LABELS.get(target, target)}"
+
+    # --- Check source balance ---
+    if source in CASH_BUCKETS:
+        src_balance = SystemCashEntry.total_for_shop(db, shop["id"], cash_bucket=source)
+    else:
+        src_balance = ServiceTransaction.current_balance(db, shop["id"], source)
+
+    if amount > src_balance:
+        return _err(
+            f"Insufficient balance. {SOURCE_LABELS.get(source, source)} only has PKR {src_balance:.2f}."
+        )
+
+    try:
+        # --- Deduct from source ---
+        if source in CASH_BUCKETS:
+            SystemCashEntry.add_entry(
+                db, shop["id"], amount,
+                entry_type="expense",
+                expense_name=note,
+                cash_bucket=source,
+            )
+        else:
+            ServiceTransaction.add_entry(
+                db, shop["id"], source, "cash_out", amount, note=note
+            )
+
+        # --- Credit to target ---
+        if target in CASH_BUCKETS:
+            SystemCashEntry.add_entry(
+                db, shop["id"], amount,
+                entry_type="add",
+                expense_name=note,
+                cash_bucket=target,
+            )
+        else:
+            ServiceTransaction.add_entry(
+                db, shop["id"], target, "cash_in", amount, note=note
+            )
+
+        db.commit()
+        flash(
+            f"PKR {amount:.2f} transferred from {SOURCE_LABELS.get(source, source)} to {SOURCE_LABELS.get(target, target)} successfully.",
+            "success",
+        )
+    except (ValueError, Exception) as e:
+        db.rollback()
+        current_app.logger.exception("Failed to transfer cash.")
+        flash("Transfer failed. Please try again.", "error")
+
+    return redirect(return_url)
+
+
 @manager_bp.route("/system-cash/add", methods=["POST"])
 @manager_required
 def add_system_cash():
@@ -2456,12 +2579,18 @@ def add_package_profit():
 
     amount_raw = request.form.get("amount", "").strip()
     entry_type = request.form.get("entry_type", "profit_in").strip().lower()
+    cash_bucket = request.form.get("cash_bucket", "counter").strip().lower()
     note = request.form.get("note", "").strip()
     return_url_raw = request.form.get("return_url", "").strip()
     return_url = _safe_manager_return_url(return_url_raw) or url_for("manager.settings_page")
 
     if entry_type not in ("profit_in", "profit_out"):
         flash("Invalid package profit action selected.", "error")
+        separator = "&" if "?" in return_url else "?"
+        return redirect(f"{return_url}{separator}profit_modal=package")
+
+    if cash_bucket not in ("counter", "online"):
+        flash("Invalid cash bucket selected.", "error")
         separator = "&" if "?" in return_url else "?"
         return redirect(f"{return_url}{separator}profit_modal=package")
 
@@ -2487,12 +2616,19 @@ def add_package_profit():
             amount,
             entry_type=system_entry_type,
             expense_name=_build_package_profit_note(note),
+            cash_bucket=cash_bucket,
         )
         db.commit()
         if entry_type == "profit_in":
-            flash("Package profit added to counter cash successfully.", "success")
+            if cash_bucket == "online":
+                flash("Package profit added to online cash successfully.", "success")
+            else:
+                flash("Package profit added to counter cash successfully.", "success")
         else:
-            flash("Package profit out recorded and deducted from counter cash.", "success")
+            if cash_bucket == "online":
+                flash("Package profit out recorded and deducted from online cash.", "success")
+            else:
+                flash("Package profit out recorded and deducted from counter cash.", "success")
     except sqlite3.DatabaseError:
         db.rollback()
         current_app.logger.exception("Failed to save package profit entry.")
@@ -3009,6 +3145,28 @@ def product_purchases(product_id: int):
     entries = StockBatch.by_product(db, shop["id"], product_id)
     total_quantity = sum(entry["quantity"] for entry in entries)
     total_spend = sum(entry["quantity"] * entry["purchase_rate"] for entry in entries)
+
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or \
+        (request.accept_mimetypes and request.accept_mimetypes.best == "application/json")
+    if is_ajax:
+        return jsonify({
+            "status": "success",
+            "product": {
+                "id": product["id"],
+                "name": product["name"],
+                "quantity": product["quantity"],
+                "brand_name": product["brand_name"],
+                "category_name": product["category_name"]
+            },
+            "entries": [{
+                "batch_date": entry["batch_date"],
+                "quantity": entry["quantity"],
+                "purchase_rate": entry["purchase_rate"],
+                "sale_price": entry["sale_price"]
+            } for entry in entries],
+            "total_quantity": total_quantity,
+            "total_spend": total_spend
+        })
 
     return render_template(
         "product_purchases.html",

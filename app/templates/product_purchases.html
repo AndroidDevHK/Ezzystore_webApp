@@ -6,86 +6,58 @@
   <title>{{ product.name }} · Purchase History</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css') }}">
 </head>
-<body class="category-detail-body">
+<body class="category-detail-body" style="padding: 24px; max-width: 1000px; margin: 0 auto;">
   <main class="category-detail-main">
-    <header class="category-detail-hero">
+    <header class="category-detail-hero" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
       <div>
-        <p class="eyebrow">Purchase history</p>
-        <h1>{{ product.name }}</h1>
-        <p class="muted">
-          {{ product.brand_name or 'No brand' }} · {{ product.category_name or 'Uncategorized' }}
+        <p class="eyebrow" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 800;">Purchase History</p>
+        <h1 style="margin: 4px 0 0; font-size: 28px; font-weight: 900; letter-spacing: -0.02em;">{{ product.name }}</h1>
+        <p class="muted" style="margin: 4px 0 0; font-size: 14px; color: var(--muted);">
+          {{ product.brand_name or 'No brand' }} · {{ product.category_name or 'Uncategorized' }} · On Hand: <strong style="color: #fff;">{{ product.quantity }} units</strong>
         </p>
       </div>
       <div class="detail-actions">
-        <a class="btn btn-soft" href="{{ url_for('manager.dashboard') }}">Back to Dashboard</a>
+        <a class="btn btn-secondary btn-mini" href="{{ url_for('manager.dashboard') }}" style="border-radius: 12px; font-weight: 800;">Back to Dashboard</a>
       </div>
     </header>
 
-    <section class="category-detail-card info-card">
-      <div class="category-detail-info">
+    <section class="card table-card">
+      <div class="card-head" style="margin-bottom: 16px;">
         <div>
-          <h2>Overview</h2>
-          <p class="muted">Stats reflect every recorded restock for this product.</p>
-        </div>
-        <div class="pill detail-pill">
-          {{ entries|length }} {{ 'restock' if entries|length == 1 else 'restocks' }}
-        </div>
-      </div>
-      <div class="category-detail-stats">
-        <article>
-          <p class="muted tiny">Total quantity purchased</p>
-          <p class="stat">{{ total_quantity }}</p>
-          <p class="muted mini">Units logged via restocks</p>
-        </article>
-        <article>
-          <p class="muted tiny">Total spend</p>
-          <p class="stat">PKR {{ '%.2f'|format(total_spend) }}</p>
-          <p class="muted mini">Sum of quantity × rate</p>
-        </article>
-        <article>
-          <p class="muted tiny">Current on-hand</p>
-          <p class="stat">{{ product.quantity }}</p>
-          <p class="muted mini">Units available now</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="category-detail-card table-card">
-      <div class="card-head">
-        <div>
-          <h2>Restock purchases</h2>
-          <p class="muted">Each line represents a restock intake for {{ product.name }}.</p>
+          <h2 class="card-title">Restock Purchases</h2>
+          <p class="card-sub">Logged restocks and batch entries for this product.</p>
         </div>
       </div>
 
       {% if entries %}
-        <div class="table-shell">
+        <div class="table-wrap">
           <table class="table">
               <thead>
                 <tr>
-                  <th>Sr.</th>
-                  <th>Restock date</th>
+                  <th style="width: 60px;">Sr.</th>
+                  <th>Restock Date</th>
                   <th>Quantity</th>
-                  <th>Purchase rate</th>
-                  <th>Total purchase</th>
-                  <th>Sale price</th>
+                  <th>Purchase Rate</th>
+                  <th>Total Spend</th>
+                  <th>Sale Price</th>
                 </tr>
               </thead>
               <tbody>
                 {% for entry in entries %}
                   <tr>
-                    <td>{{ loop.index }}</td>
+                    <td class="product-sr-cell">{{ loop.index }}</td>
                     <td>{{ entry.batch_date|human_date }}</td>
-                    <td>{{ entry.quantity }} units</td>
+                    <td><strong style="color: #fff;">{{ entry.quantity }}</strong> units</td>
                     <td>PKR {{ '%.2f'|format(entry.purchase_rate) }}</td>
-                    <td>PKR {{ '%.2f'|format(entry.quantity * entry.purchase_rate) }}</td>
-                  <td>PKR {{ '%.2f'|format(entry.sale_price) }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
+                    <td><strong style="color: var(--accent-2);">PKR {{ '%.2f'|format(entry.quantity * entry.purchase_rate) }}</strong></td>
+                    <td>PKR {{ '%.2f'|format(entry.sale_price) }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
           </table>
         </div>
       {% else %}

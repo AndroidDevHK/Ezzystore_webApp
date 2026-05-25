@@ -202,6 +202,26 @@
       color:#f8fafc;
       border-top:1px solid rgba(255,255,255,.14);
     }
+    .quick-action-card{
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .quick-action-card:hover{
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(255, 255, 255, 0.16) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+    .quick-action-card:active{
+      transform: translateY(0);
+    }
   </style>
 
 
@@ -267,7 +287,7 @@
     <div class="sidebar-group">
       <p class="sidebar-group-label">Finance</p>
       <a href="{{ url_for('manager.cash_history_page') }}" class="{% if active_page in ['cash_history', 'cash_history_detail'] %}active{% endif %}">Cash History</a>
-      <a href="{{ url_for('manager.profit_history_page') }}" class="{% if active_page in ['profit_history', 'profit_history_detail'] %}active{% endif %}">Profit History</a>
+      <!-- <a href="{{ url_for('manager.profit_history_page') }}" class="{% if active_page in ['profit_history', 'profit_history_detail'] %}active{% endif %}">Profit History</a> -->
     </div>
 
     <div class="sidebar-group">
@@ -720,9 +740,14 @@
                             <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm13.71-9.04 1.83-1.83a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z" fill="currentColor"/>
                           </svg>
                         </button>
-                        <a class="btn btn-secondary btn-mini" href="{{ url_for('manager.product_purchases', product_id=p.id) }}">
+                        <button class="btn btn-secondary btn-mini view-restocks-btn" type="button" 
+                                data-product-id="{{ p.id }}"
+                                data-product-name="{{ p.name }}"
+                                data-product-brand="{{ p.brand_name or '' }}"
+                                data-product-category="{{ p.category_name or '' }}"
+                                data-product-qty="{{ p.quantity }}">
                           View restocks
-                        </a>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -743,442 +768,229 @@
             <p>No products match these filters.</p>
 
           </div>
-
+          </div>
         {% else %}
-
           <div class="empty">
-
-            <div class="empty-art">--</div>
-
+            <div class="empty-art">📦</div>
             <h3>No products yet</h3>
-
             <p>Add products from the category or brand detail views.</p>
-
           </div>
-
         {% endif %}
-
       </div>
-
-
-
       <div class="modal-backdrop manage-modal" id="editProductModal">
-
         <div class="modal">
-
           <div class="modal-head">
-
             <div>
-
               <p class="modal-title">Edit product</p>
-
               <p class="modal-sub">Update name, brand, or category.</p>
-
             </div>
-
             <button class="icon-btn" type="button" data-product-modal-close>&times;</button>
-
           </div>
-
-          <form class="modal-body" method="post" action="{{ url_for('manager.update_product') }}">
-
+          <form class="modal-body wallet-profit-form" method="post" action="{{ url_for('manager.update_product') }}" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
             <input type="hidden" name="edit_product_id" id="editProductId">
-
-            <label class="field">
-
-          <span>Name</span>
-
-          <input name="edit_product_name" id="editProductName" required>
-
-        </label>
-
-        <label class="field">
-
-          <span>Minimum stock to maintain</span>
-
-          <input name="edit_product_reorder_level" id="editProductReorder" type="number" min="0" value="3" required>
-
-        </label>
-
-        <label class="field">
-
-          <span>Brand</span>
-
-          <select name="edit_product_brand_id" id="editProductBrand">
-
+            <label class="field" style="display: flex; flex-direction: column; align-items: stretch; gap: 6px;">
+              <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; min-width: unset; text-align: left;">Product Name</span>
+              <input name="edit_product_name" id="editProductName" required style="width: 100%;">
+            </label>
+            <label class="field" style="display: flex; flex-direction: column; align-items: stretch; gap: 6px;">
+              <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; min-width: unset; text-align: left;">Minimum stock to maintain</span>
+              <input name="edit_product_reorder_level" id="editProductReorder" type="number" min="0" value="3" required style="width: 100%;">
+            </label>
+            <label class="field" style="display: flex; flex-direction: column; align-items: stretch; gap: 6px;">
+              <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; min-width: unset; text-align: left;">Brand</span>
+              <select name="edit_product_brand_id" id="editProductBrand" style="width: 100%;">
                 <option value="">No brand</option>
-
                 {% for brand in brands %}
-
                   <option value="{{ brand.id }}">{{ brand.name }}</option>
-
                 {% endfor %}
-
               </select>
-
             </label>
-
-            <label class="field">
-
-              <span>Category</span>
-
-              <select name="edit_product_category_id" id="editProductCategory" required>
-
+            <label class="field" style="display: flex; flex-direction: column; align-items: stretch; gap: 6px;">
+              <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; min-width: unset; text-align: left;">Category</span>
+              <select name="edit_product_category_id" id="editProductCategory" required style="width: 100%;">
                 <option value="">Select category</option>
-
                 {% for category in categories %}
-
                   <option value="{{ category.id }}">{{ category.name }}</option>
-
                 {% endfor %}
-
               </select>
-
             </label>
-
-            <div class="modal-actions">
-
+            <div class="modal-actions" style="margin-top: 8px;">
               <button class="btn btn-soft" type="button" data-product-modal-close>Cancel</button>
-
               <button class="btn btn-primary" type="submit">Save changes</button>
-
             </div>
-
           </form>
-
         </div>
-
       </div>
-
       <div class="modal-backdrop manage-modal" id="addProductModal">
-
         <div class="modal">
-
           <div class="modal-head">
-
             <div>
-
               <p class="modal-title">Add product</p>
-
               <p class="modal-sub">Register a new product for this shop.</p>
-
             </div>
-
             <button class="icon-btn" type="button" data-product-modal-close>&times;</button>
-
           </div>
-
           <form class="modal-body" method="post" action="{{ url_for('manager.create_product') }}">
-
             <input type="hidden" name="return_to" value="products">
-
             <label class="field">
-
               <span>Name</span>
-
               <input name="product_name" placeholder="Product name" required>
-
             </label>
-
             <label class="field">
-
               <span>Minimum stock to maintain</span>
-
               <input name="product_reorder_level" type="number" min="0" value="3" required>
-
             </label>
-
             <label class="field">
-
               <span>Brand</span>
-
               <select name="product_brand_id">
-
                 <option value="">No brand</option>
-
                 {% for brand in brands %}
-
                   <option value="{{ brand.id }}">{{ brand.name }}</option>
-
                 {% endfor %}
-
               </select>
-
             </label>
-
             <label class="field">
-
               <span>Category</span>
-
               <select name="product_category_id" required>
-
                 <option value="">Select category</option>
-
                 {% for category in categories %}
-
                   <option value="{{ category.id }}">{{ category.name }}</option>
-
                 {% endfor %}
-
               </select>
-
             </label>
-
             <div class="modal-actions">
-
               <button class="btn btn-soft" type="button" data-product-modal-close>Cancel</button>
-
               <button class="btn btn-primary" type="submit">Add product</button>
-
             </div>
-
           </form>
-
         </div>
-
       </div>
-
-
-
     </section>
     {% endif %}
-
-
     {% if active_page == 'customers' %}
     <section class="manager-section" data-fragment="customers" id="customersSection">
-
       <div class="card-head">
-
         <div>
           <div class="page-title-inline">
             <h2>Customers</h2>
           </div>
-
         </div>
-
       </div>
-
       <section class="card table-card">
-
         <div class="card-head table-head">
-
           <div>
-
             <h2>Customer ledger</h2>
-
           </div>
-
           <label class="field">
-
             <span>Search</span>
-
             <input type="search" id="customerSearch" placeholder="Search name or phone" autocomplete="off">
-
           </label>
-
         </div>
-
         {% if customer_insights %}
-
           <div class="table-shell">
-
             <table class="table">
-
               <thead>
-
                 <tr>
-
                   <th>Customer</th>
-
                   <th>Purchased items</th>
-
                   <th>Last purchase</th>
-
                   <th>Sale value</th>
-
                   <th>Purchase value</th>
-
                   <th>Profit %</th>
-
-
                 </tr>
-
               </thead>
-
               <tbody>
-
                 {% for insight in customer_insights %}
-
                   <tr data-customer-row data-customer-filter="{{ (insight.name ~ ' ' ~ (insight.phone or '')) | lower }}">
-
                     <td>
-
                       <div class="customer-name">{{ insight.name }}</div>
-
                       <small class="muted">{{ insight.phone or '-' }}</small>
-
                     </td>
-
                     <td>{{ insight.item_count or 0 }}</td>
-
                     <td>{{ insight.last_purchase|human_datetime if insight.last_purchase else '-' }}</td>
-
                     <td>PKR {{ '%.2f'|format(insight.sale_total or 0) }}</td>
-
                     <td>PKR {{ '%.2f'|format(insight.purchase_total or 0) }}</td>
-
                     <td>
-
                       {% if insight.profit_pct is not none %}
-
                         {{ '%.1f'|format(insight.profit_pct) }}%
-
                       {% else %}
-
                         -
-
                       {% endif %}
-
                     </td>
-
-
                   </tr>
-
                 {% endfor %}
-
               </tbody>
-
             </table>
-
           </div>
           <div class="table-pagination" id="customerPagination">
             <button class="btn btn-soft btn-mini" type="button" id="customerPrevBtn">Previous</button>
             <span class="muted tiny" id="customerPageMeta"></span>
             <button class="btn btn-soft btn-mini" type="button" id="customerNextBtn">Next</button>
           </div>
-
         {% else %}
-
           <div class="empty mini">
-
-            <div class="empty-art">--</div>
-
+            <div class="empty-art">👤</div>
             <p>No customers added yet.</p>
-
           </div>
-
         {% endif %}
-
       </section>
-
     </section>
     {% endif %}
-
-
-
     {% if active_page == 'stock' %}
     <section class="manager-section" data-fragment="stock" id="stockSection">
-
       <section class="card table-card">
-
         <div class="card-head">
-
           <div>
-
             <h2>Recent restocks</h2>
-
             <p class="muted">Review each restock run at a glance.</p>
-
           </div>
-
         </div>
-
         {% if stock_batch_summary %}
-
           <div class="table-shell restock-table">
-
             <table class="table">
-
               <thead>
-
                 <tr>
-
                   <th>Sr.</th>
-
                   <th>Restock date</th>
-
                   <th>Products</th>
-
                   <th>Total purchase</th>
-
                   <th style="width:160px;">Actions</th>
-
                 </tr>
-
               </thead>
-
               <tbody>
-
                 {% for summary in stock_batch_summary %}
-
                   <tr>
-
                     <td>{{ loop.index }}</td>
-
                     <td>{{ summary.batch_date|human_date }}</td>
-
                     <td>{{ summary.product_count }} products</td>
-
                     <td>PKR {{ '%.2f'|format(summary.total_purchase) }}</td>
-
                     <td>
-
                       <a class="btn btn-secondary btn-mini" href="{{ url_for('manager.stock_batch_detail', batch_date=summary.batch_date) }}">
-
                         View details
-
                       </a>
-
                     </td>
-
                   </tr>
-
                 {% endfor %}
-
               </tbody>
-
             </table>
-
           </div>
-
         {% else %}
-
           <div class="empty mini">
-
-            <div class="empty-art">??</div>
-
+            <div class="empty-art">📦</div>
             <p>No restocks recorded yet.</p>
-
           </div>
-
         {% endif %}
-
       </section>
-
     </section>
     {% endif %}
-
-
-
     {% if active_page == 'sales' and not products %}
     <section class="manager-section" data-fragment="sales" id="salesSection">
       <div class="empty mini">
-        <div class="empty-art">??</div>
+        <div class="empty-art">🛒</div>
         <p>Register a product to start recording sales.</p>
       </div>
     </section>
     {% endif %}
-
 <div class="modal-backdrop" id="saleConfirmModal">
       <div class="modal">
         <div class="modal-head">
@@ -1215,7 +1027,6 @@
               </button>
             </div>
           </div>
-
           <div class="confirm-items">
             <button class="btn btn-soft btn-mini" type="button" id="confirmItemsToggle">
               <span id="confirmItemsToggleText">Show items</span>
@@ -1229,120 +1040,76 @@
         </div>
       </div>
     </div>
-
-
-
     {% if active_page == 'reports' %}
     <section class="manager-section glass-panel" data-fragment="sales-report" id="salesReportSection">
-
       <section class="report-card-section">
-
-        <div class="report-toolbar">
-
-          <div class="report-info">
-
-            <p class="eyebrow">Performance overview</p>
-
-            <h3>Sales reports</h3>
-
-            {% if report_search_performed %}
-            <p>Summaries from {{ report_start|human_date }} to {{ report_end|human_date }}.</p>
-            {% else %}
-            <p>Search or filter by date to view sales summaries.</p>
-            {% endif %}
-
+        <div class="report-toolbar" style="justify-content: flex-start; margin-bottom: 20px;">
+          <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <form method="get" action="{{ url_for('manager.reports_page') }}" class="report-search" style="margin: 0; padding: 0; background: none; border: none; box-shadow: none; display: flex; align-items: center;">
+              <label style="margin: 0;">
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; display: block; margin-bottom: 4px;">Select Date</span>
+                <select name="day" class="settings-input" onchange="this.form.submit()" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text); padding: 8px 12px; border-radius: 8px; font-weight: 500; min-width: 180px;">
+                  {% for report_day in reports_available_dates %}
+                  <option value="{{ report_day }}" {% if report_day == reports_selected_day %}selected{% endif %}>
+                    {{ report_day|human_date }}{% if report_day == today_iso %} (Today){% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
+            </form>
           </div>
-
-          <div class="report-search">
-
-            <label for="reportDateSearch">
-
-              <span>Search by date</span>
-
-              <input type="search" id="reportDateSearch" placeholder="Try 12-Sep-2025" autocomplete="off">
-
-            </label>
-
-          </div>
-
         </div>
-
         {% if report_daily_summary %}
-
           <div id="reportCardGrid" class="report-row-list">
-
             {% for summary in report_daily_summary %}
-
               {% set profit_obtained = summary.sales_total - summary.returns_total %}
               {% set txn_count = summary.sale_count + summary.return_count %}
-
               <article class="card report-row"
                        data-report-date="{{ summary.sale_date }} {{ summary.sale_date|human_date }}">
-
                 <div class="report-row-main">
                   <p class="eyebrow">Date</p>
                   <h3 class="report-date">{{ summary.sale_date|human_date }}</h3>
                 </div>
-
                 <div class="report-row-metric">
                   <p class="muted tiny">Net profit</p>
                   <strong class="report-value {{ 'warn' if profit_obtained < 0 else '' }}">
                     PKR {{ '%.2f'|format(profit_obtained) }}
                   </strong>
                 </div>
-
                 <div class="report-row-metric">
                   <p class="muted tiny">Items sold</p>
                   <strong class="report-value">{{ summary.sold_items }}</strong>
                 </div>
-
                 <div class="report-row-metric">
                   <p class="muted tiny">Transactions</p>
                   <strong class="report-value">{{ txn_count }}</strong>
                 </div>
-
                 <div class="report-row-actions">
                   <a class="btn btn-secondary btn-mini"
                      href="{{ url_for('manager.sales_report_detail', report_date=summary.sale_date, sales_report_start=report_start, sales_report_end=report_end) }}">
                     View details
                   </a>
                 </div>
-
               </article>
-
             {% endfor %}
-
           </div>
-
           <div class="empty mini report-search-empty" id="reportSearchEmpty" hidden>
-
             <div class="empty-art">🔍</div>
-
             <p>No reports match this search.</p>
-
           </div>
-
         {% elif report_search_performed %}
-
-          <div class="empty mini">
-
-            <div class="empty-art">?</div>
-
-            <p>No sales recorded for the selected dates.</p>
-
+          <div class="empty glass-panel" style="padding: 60px 20px; text-align: center; border-radius: 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); backdrop-filter: blur(10px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; margin-top: 20px;">
+            <div class="empty-art" style="font-size: 64px; animation: float 3s ease-in-out infinite; filter: drop-shadow(0 0 10px rgba(255,255,255,0.15)); margin-bottom: 5px;">📊</div>
+            <h3 style="font-size: 20px; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.01em;">No Sales Recorded</h3>
+            <p style="color: var(--muted); max-width: 380px; margin: 0; font-size: 14px; line-height: 1.5;">No sales or return entries were recorded on the selected date. Choose a different date from the dropdown to review performance history.</p>
           </div>
-
         {% endif %}
-
       </section>
-
     </section>
     {% endif %}
-
     {% if active_page == 'daily_report' %}
-    <section class="manager-section glass-panel" id="dailyReportSection">
-      <section class="report-card-section">
-        <div class="card-head">
+    <section class="manager-section" id="dailyReportSection" style="padding: 0; background: none; border: none; box-shadow: none; backdrop-filter: none;">
+        <div class="card-head" style="margin-bottom: 20px;">
           <div>
             <p class="eyebrow">Daily Report</p>
             <h3>{{ daily_report_selected_day|human_date }}</h3>
@@ -1360,7 +1127,6 @@
             </label>
           </form>
         </div>
-
         <div class="daily-report-shell">
           <div class="table-card cash-history-table-card daily-report-table">
             <div class="card-head">
@@ -1382,20 +1148,7 @@
                 <tbody>
                   <tr>
                     <td class="product-sr-cell">1</td>
-                    <td>Total Sale</td>
-                    <td>PKR {{ '%.2f'|format(daily_report.sales.total_sale_amount or 0) }}</td>
-                    <td class="table-actions">
-                      <button class="btn btn-secondary btn-mini" type="button"
-                        data-daily-report-open
-                        data-daily-report-title="Stock Sales"
-                        data-daily-report-day="{{ daily_report_selected_day|human_date }}"
-                        data-daily-report-total="{{ '%.2f'|format(daily_report.sales.total_sale_amount or 0) }}"
-                        data-daily-report-entries='{{ daily_report.sales.detail_entries|tojson }}'>Info</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="product-sr-cell">2</td>
-                    <td>Profit</td>
+                    <td>Sales Profit</td>
                     <td>
                       PKR {{ '%.2f'|format(daily_report.sales.total_sale_profit or 0) }}
                       ({{ '%.2f'|format(daily_report.sales.sale_profit_percent or 0) }}%)
@@ -1410,21 +1163,7 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="product-sr-cell">3</td>
-                    <td>Sale Count</td>
-                    <td>{{ daily_report.sales.sale_count or 0 }}</td>
-                    <td class="table-actions">
-                      <button class="btn btn-secondary btn-mini" type="button"
-                        data-daily-report-open
-                        data-daily-report-title="Sale Count"
-                        data-daily-report-day="{{ daily_report_selected_day|human_date }}"
-                        data-daily-report-total="{{ daily_report.sales.sale_count or 0 }}"
-                        data-daily-report-total-label="{{ daily_report.sales.sale_count or 0 }} sale{{ '' if (daily_report.sales.sale_count or 0) == 1 else 's' }}"
-                        data-daily-report-entries='{{ daily_report.sales.detail_entries|tojson }}'>Info</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="product-sr-cell">4</td>
+                    <td class="product-sr-cell">2</td>
                     <td>Wallet Profit</td>
                     <td>PKR {{ '%.2f'|format(daily_report.wallet_profit.total or 0) }}</td>
                     <td class="table-actions">
@@ -1437,7 +1176,7 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="product-sr-cell">5</td>
+                    <td class="product-sr-cell">3</td>
                     <td>Easyload Profit</td>
                     <td>PKR {{ '%.2f'|format(daily_report.easyload_profit.total or 0) }}</td>
                     <td class="table-actions">
@@ -1450,7 +1189,7 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="product-sr-cell">6</td>
+                    <td class="product-sr-cell">4</td>
                     <td>Package Profit</td>
                     <td>PKR {{ '%.2f'|format(daily_report.package_profit.total or 0) }}</td>
                     <td class="table-actions">
@@ -1463,7 +1202,7 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="product-sr-cell">7</td>
+                    <td class="product-sr-cell">5</td>
                     <td>Online Cash</td>
                     <td>PKR {{ '%.2f'|format(daily_report.online_cash.total or 0) }}</td>
                     <td class="table-actions">
@@ -1478,185 +1217,9 @@
                 </tbody>
               </table>
             </div>
-          </div>
-
-          <div class="table-card cash-history-table-card daily-report-table">
-            <div class="card-head">
-              <div>
-                <h4 class="daily-report-table-title">Wallet Profit</h4>
-                <p class="daily-report-table-sub">Easypaisa and JazzCash profit for the selected date.</p>
-              </div>
-            </div>
-            <div class="table-shell">
-              <table class="table cash-history-table">
-                <thead>
-                  <tr>
-                    <th>Sr.</th>
-                    <th>Channel</th>
-                    <th>Profit</th>
-                    <th class="table-actions">Info</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="product-sr-cell">1</td>
-                    <td>Easypaisa</td>
-                    <td>PKR {{ '%.2f'|format(daily_report.wallet_profit.easypaisa or 0) }}</td>
-                    <td class="table-actions">
-                      <button class="btn btn-secondary btn-mini" type="button"
-                        data-daily-report-open
-                        data-daily-report-title="Easypaisa Profit"
-                        data-daily-report-day="{{ daily_report_selected_day|human_date }}"
-                        data-daily-report-total="{{ '%.2f'|format(daily_report.wallet_profit.easypaisa or 0) }}"
-                        data-daily-report-entries='{{ daily_report.wallet_profit.detail_entries_by_channel.easypaisa|tojson }}'>Info</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="product-sr-cell">2</td>
-                    <td>JazzCash</td>
-                    <td>PKR {{ '%.2f'|format(daily_report.wallet_profit.jazzcash or 0) }}</td>
-                    <td class="table-actions">
-                      <button class="btn btn-secondary btn-mini" type="button"
-                        data-daily-report-open
-                        data-daily-report-title="JazzCash Profit"
-                        data-daily-report-day="{{ daily_report_selected_day|human_date }}"
-                        data-daily-report-total="{{ '%.2f'|format(daily_report.wallet_profit.jazzcash or 0) }}"
-                        data-daily-report-entries='{{ daily_report.wallet_profit.detail_entries_by_channel.jazzcash|tojson }}'>Info</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="product-sr-cell">3</td>
-                    <td>Total</td>
-                    <td>PKR {{ '%.2f'|format(daily_report.wallet_profit.total or 0) }}</td>
-                    <td class="table-actions">
-                      <button class="btn btn-secondary btn-mini" type="button"
-                        data-daily-report-open
-                        data-daily-report-title="Wallet Profit"
-                        data-daily-report-day="{{ daily_report_selected_day|human_date }}"
-                        data-daily-report-total="{{ '%.2f'|format(daily_report.wallet_profit.total or 0) }}"
-                        data-daily-report-entries='{{ daily_report.wallet_profit.detail_entries|tojson }}'>Info</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="table-card cash-history-table-card daily-report-table">
-            <div class="card-head">
-              <div>
-                <h4 class="daily-report-table-title">Easyload Profit</h4>
-                <p class="daily-report-table-sub">Network-wise Easyload profit for the selected date.</p>
-              </div>
-            </div>
-            <div class="table-shell">
-              <table class="table cash-history-table">
-                <thead>
-                  <tr>
-                    <th>Sr.</th>
-                    <th>Network</th>
-                    <th>Profit</th>
-                    <th class="table-actions">Info</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for channel in easyload_channels %}
-                  <tr>
-                    <td class="product-sr-cell">{{ loop.index }}</td>
-                    <td>{{ channel.label }}</td>
-                    <td>PKR {{ '%.2f'|format(daily_report.easyload_profit[channel.key] or 0) }}</td>
-                    <td class="table-actions">
-                      <button class="btn btn-secondary btn-mini" type="button"
-                        data-daily-report-open
-                        data-daily-report-title="{{ channel.label }} Profit"
-                        data-daily-report-day="{{ daily_report_selected_day|human_date }}"
-                        data-daily-report-total="{{ '%.2f'|format(daily_report.easyload_profit[channel.key] or 0) }}"
-                        data-daily-report-entries='{{ daily_report.easyload_profit.detail_entries_by_channel[channel.key]|tojson }}'>Info</button>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                  <tr>
-                    <td class="product-sr-cell">{{ (easyload_channels|length) + 1 }}</td>
-                    <td>Total</td>
-                    <td>PKR {{ '%.2f'|format(daily_report.easyload_profit.total or 0) }}</td>
-                    <td class="table-actions">
-                      <button class="btn btn-secondary btn-mini" type="button"
-                        data-daily-report-open
-                        data-daily-report-title="Easyload Profit"
-                        data-daily-report-day="{{ daily_report_selected_day|human_date }}"
-                        data-daily-report-total="{{ '%.2f'|format(daily_report.easyload_profit.total or 0) }}"
-                        data-daily-report-entries='{{ daily_report.easyload_profit.detail_entries|tojson }}'>Info</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="table-card cash-history-table-card daily-report-table">
-            <div class="card-head">
-              <div>
-                <h4 class="daily-report-table-title">Package Profit</h4>
-                <p class="daily-report-table-sub">Recorded package-profit entries for the selected date.</p>
-              </div>
-            </div>
-            <div class="table-shell">
-              <table class="table cash-history-table">
-                <thead>
-                  <tr>
-                    <th>Sr.</th>
-                    <th>Entry</th>
-                    <th>Profit</th>
-                    <th class="table-actions">Info</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% if daily_report.package_profit.entries %}
-                    {% for entry in daily_report.package_profit.entries %}
-                    <tr>
-                      <td class="product-sr-cell">{{ loop.index }}</td>
-                      <td>{{ entry.label }}</td>
-                      <td>PKR {{ '%.2f'|format(entry.amount or 0) }}</td>
-                      <td class="table-actions">
-                        <button class="btn btn-secondary btn-mini" type="button"
-                          data-daily-report-open
-                          data-daily-report-title="{{ entry.label }}"
-                          data-daily-report-day="{{ daily_report_selected_day|human_date }}"
-                          data-daily-report-total="{{ '%.2f'|format(entry.amount or 0) }}"
-                          data-daily-report-entry='{{ entry|tojson }}'>Info</button>
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  {% else %}
-                    <tr>
-                      <td class="product-sr-cell">1</td>
-                      <td>No entries</td>
-                      <td>PKR 0.00</td>
-                      <td class="table-actions">-</td>
-                    </tr>
-                  {% endif %}
-                  <tr>
-                    <td class="product-sr-cell">{{ (daily_report.package_profit.entries|length if daily_report.package_profit.entries else 1) + 1 }}</td>
-                    <td>Total</td>
-                    <td>PKR {{ '%.2f'|format(daily_report.package_profit.total or 0) }}</td>
-                    <td class="table-actions">
-                      <button class="btn btn-secondary btn-mini" type="button"
-                        data-daily-report-open
-                        data-daily-report-title="Package Profit"
-                        data-daily-report-day="{{ daily_report_selected_day|human_date }}"
-                        data-daily-report-total="{{ '%.2f'|format(daily_report.package_profit.total or 0) }}"
-                        data-daily-report-entries='{{ daily_report.package_profit.entries|tojson }}'>Info</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
-      </section>
     </section>
     {% endif %}
-
     {% if active_page == 'wallet_history' %}
     <section class="manager-section glass-panel" id="walletHistorySection">
     <section class="report-card-section">
@@ -1670,7 +1233,6 @@
             >{{ channel.label }}</button>
             {% endfor %}
           </div>
-
           {% for channel in wallet_channels %}
           <div class="wallet-history-panel" data-wallet-history-tab="{{ channel.key }}" {% if not loop.first %}hidden{% endif %}>
             <article class="card wallet-history-card">
@@ -1736,7 +1298,6 @@
     </section>
     </section>
     {% endif %}
-
     {% if active_page == 'easyload_history' %}
     <section class="manager-section glass-panel" id="easyloadHistorySection">
     <section class="report-card-section">
@@ -1750,7 +1311,6 @@
             >{{ channel.label }}</button>
             {% endfor %}
           </div>
-
           {% for channel in easyload_channels %}
           <div class="wallet-history-panel" data-wallet-history-tab="{{ channel.key }}" {% if not loop.first %}hidden{% endif %}>
             <article class="card wallet-history-card">
@@ -1820,59 +1380,53 @@
     </section>
     </section>
     {% endif %}
-
     {% if active_page == 'cash_history' %}
-    <section class="manager-section glass-panel" id="expenseHistorySection">
-      <section class="report-card-section">
+    <section class="manager-section" id="expenseHistorySection" style="padding: 0; background: none; border: none; box-shadow: none; backdrop-filter: none;">
         {% if cash_history %}
-        <div class="table-card cash-history-table-card">
-          <div class="table-shell">
-            <table class="table cash-history-table">
-              <thead>
-                <tr>
-                  <th>Sr.</th>
-                  <th>Date</th>
-                  <th>Entries</th>
-                  <th>Last Activity</th>
-                  <th class="table-actions">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for day_group in cash_history %}
-                {% set latest_entry = day_group.entries[0] if day_group.entries else None %}
-                {% set day_buckets = [] %}
-                {% if day_group.source_totals.wallet %}{% set _ = day_buckets.append('wallet') %}{% endif %}
-                {% if day_group.source_totals.easyload %}{% set _ = day_buckets.append('easyload') %}{% endif %}
-                {% if day_group.source_totals.counter %}{% set _ = day_buckets.append('counter') %}{% endif %}
-                <tr data-cash-summary-row data-cash-summary-buckets="{{ day_buckets|join(',') }}">
-                  <td class="product-sr-cell">{{ loop.index }}</td>
-                  <td><strong class="cash-history-date-label">{{ day_group.day|human_date }}</strong></td>
-                  <td>{{ day_group.entry_count }}</td>
-                  <td class="cash-history-nowrap">
-                    {% if latest_entry %}
-                    {{ latest_entry.created_at|human_time }}
-                    {% else %}
-                    No activity
-                    {% endif %}
-                  </td>
-                  <td class="table-actions">
-                    <a class="btn btn-secondary btn-mini" href="{{ url_for('manager.cash_history_detail_page', day=day_group.day) }}" target="_blank" rel="noopener noreferrer">View Details</a>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
+        <div class="table-shell">
+          <table class="table cash-history-table">
+            <thead>
+              <tr>
+                <th>Sr.</th>
+                <th>Date</th>
+                <th>Entries</th>
+                <th>Last Activity</th>
+                <th class="table-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for day_group in cash_history %}
+              {% set latest_entry = day_group.entries[0] if day_group.entries else None %}
+              {% set day_buckets = [] %}
+              {% if day_group.source_totals.wallet %}{% set _ = day_buckets.append('wallet') %}{% endif %}
+              {% if day_group.source_totals.easyload %}{% set _ = day_buckets.append('easyload') %}{% endif %}
+              {% if day_group.source_totals.counter %}{% set _ = day_buckets.append('counter') %}{% endif %}
+              <tr data-cash-summary-row data-cash-summary-buckets="{{ day_buckets|join(',') }}">
+                <td class="product-sr-cell">{{ loop.index }}</td>
+                <td><strong class="cash-history-date-label">{{ day_group.day|human_date }}</strong></td>
+                <td>{{ day_group.entry_count }}</td>
+                <td class="cash-history-nowrap">
+                  {% if latest_entry %}
+                  {{ latest_entry.created_at|human_time }}
+                  {% else %}
+                  No activity
+                  {% endif %}
+                </td>
+                <td class="table-actions">
+                  <a class="btn btn-secondary btn-mini" href="{{ url_for('manager.cash_history_detail_page', day=day_group.day) }}" target="_blank" rel="noopener noreferrer">View Details</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
         {% else %}
         <div class="empty mini">
           <p>No cash history found.</p>
         </div>
         {% endif %}
-      </section>
     </section>
     {% endif %}
-
     {% if active_page == 'cash_history_detail' %}
     <section class="manager-section glass-panel" id="cashHistoryDetailPageSection">
       <section class="report-card-section">
@@ -1881,7 +1435,6 @@
             <p class="eyebrow">{{ cash_history_day.day|human_date if cash_history_day else 'Cash History' }}</p>
           </div>
         </div>
-
         {% if cash_history_day and cash_history_day.entries %}
         <div class="filter-chips cash-history-detail-filters" role="group" aria-label="Cash history detail filters">
           <button class="chip active" type="button" data-cash-detail-filter="all">All</button>
@@ -1946,7 +1499,6 @@
       </section>
     </section>
     {% endif %}
-
     {% if active_page == 'profit_history' %}
     <section class="manager-section glass-panel" id="profitHistorySection">
       <section class="report-card-section">
@@ -1957,7 +1509,6 @@
           </div>
           <strong class="report-value">PKR {{ '%.2f'|format(total_profit_history_amount or 0) }}</strong>
         </div>
-
         {% if profit_history %}
         <div class="table-card cash-history-table-card">
           <div class="table-shell">
@@ -2003,7 +1554,6 @@
       </section>
     </section>
     {% endif %}
-
     {% if active_page == 'profit_history_detail' %}
     <section class="manager-section glass-panel" id="profitHistoryDetailSection">
       <section class="report-card-section">
@@ -2016,7 +1566,6 @@
           <strong class="report-value">PKR {{ '%.2f'|format(profit_history_day.total_profit or 0) }}</strong>
           {% endif %}
         </div>
-
         {% if profit_history_day and profit_history_day.entries %}
         <div class="table-card cash-history-table-card">
           <div class="table-shell">
@@ -2066,26 +1615,16 @@
       </section>
     </section>
     {% endif %}
-
     {% if active_page == 'settings' %}
     <section class="manager-section" data-fragment="settings" id="settingsSection">
-
       <section class="card form-card settings-card">
-
         <div class="card-head">
-
           <div>
-
             <h2>Sales Settings</h2>
-
             <p class="muted">Control pricing behavior and what staff can see during selling.</p>
-
           </div>
-
         </div>
-
         <form method="post" action="{{ url_for('manager.settings_page') }}" class="settings-form">
-
           <div class="settings-table">
             <div class="settings-row">
               <div class="settings-meta">
@@ -2096,7 +1635,6 @@
                 <input class="settings-input" type="number" step="0.01" min="0" max="100" name="expense_percent" value="{{ '%.2f'|format(expense_percent or 0) }}" required>
               </div>
             </div>
-
             <div class="settings-row">
               <div class="settings-meta">
                 <p class="settings-label">Hide Sale Prices While Selling</p>
@@ -2110,43 +1648,24 @@
               </div>
             </div>
           </div>
-
           <div class="modal-actions">
-
             <button class="btn btn-primary" type="submit">Save settings</button>
-
           </div>
-
         </form>
-
       </section>
-
     </section>
     {% endif %}
-
-
     {% if active_page == 'product_management' and product_management_tab == 'brands' %}
     <section class="manager-section" data-fragment="brands" id="brandsSection">
       <div class="brand-controls">
-
         <div class="category-search brand-search">
-
           <label for="brandSearch">
-
             <span>Search brands</span>
-
             <input type="search" id="brandSearch" placeholder="Type to filter brands" autocomplete="off">
-
           </label>
-
         </div>
-
       </div>
-
-
-
       {% if brands %}
-
         <div class="table-card">
           <div class="table-shell">
             <table class="table brand-table">
@@ -2178,144 +1697,72 @@
             </table>
           </div>
         </div>
-
         <div class="empty mini category-search-empty" id="brandEmpty" hidden>
-
           <div class="empty-art">🔍</div>
-
           <p>No brands match your search.</p>
-
         </div>
-
       {% else %}
-
         <div class="empty mini">
-
           <div class="empty-art">🏷</div>
-
           <p>No brands added yet.</p>
-
         </div>
-
       {% endif %}
-
-
-
       <div class="modal-backdrop brand-modal" id="addBrandModal">
-
         <div class="modal">
-
           <div class="modal-head">
-
             <div>
-
               <p class="modal-title">Add brand</p>
-
               <p class="modal-sub">Register a new brand for {{ shop.name }}.</p>
-
             </div>
-
             <button class="icon-btn" type="button" data-brand-modal-close>&times;</button>
-
           </div>
-
           <form class="modal-body" method="post" action="{{ url_for('manager.create_brand') }}">
-
             <label class="field">
-
               <span>Brand name</span>
-
               <input name="brand_name" placeholder="e.g., Nike" required>
-
             </label>
-
             <div class="modal-actions">
-
               <button class="btn btn-soft" type="button" data-brand-modal-close>Cancel</button>
-
               <button class="btn btn-primary" type="submit">Add brand</button>
-
             </div>
-
           </form>
-
         </div>
-
       </div>
-
-
-
       <div class="modal-backdrop brand-modal" id="renameBrandModal">
-
         <div class="modal">
-
           <div class="modal-head">
-
             <div>
-
               <p class="modal-title">Rename brand</p>
-
               <p class="modal-sub">Update the brand name for {{ shop.name }}.</p>
-
             </div>
-
             <button class="icon-btn" type="button" data-brand-modal-close>&times;</button>
-
           </div>
-
           <form class="modal-body" method="post" action="{{ url_for('manager.update_brand') }}">
-
             <input type="hidden" name="brand_id" id="renameBrandId">
-
             <label class="field">
-
               <span>Brand name</span>
-
               <input name="brand_new_name" id="renameBrandName" required>
-
             </label>
-
             <div class="modal-actions">
-
               <button class="btn btn-soft" type="button" data-brand-modal-close>Cancel</button>
-
               <button class="btn btn-primary" type="submit">Save</button>
-
             </div>
-
           </form>
-
         </div>
-
       </div>
-
     </section>
     {% endif %}
-
-
-
     {% if active_page == 'product_management' and product_management_tab == 'categories' %}
     <section class="manager-section" data-fragment="categories" id="categoriesSection">
       <div class="brand-controls category-controls">
-
         <div class="category-search brand-search">
-
           <label for="categoryManageSearch">
-
             <span>Search categories</span>
-
             <input type="search" id="categoryManageSearch" placeholder="Type to filter categories" autocomplete="off">
-
           </label>
-
         </div>
-
       </div>
-
-
-
       {% if categories %}
-
         <div class="table-card">
           <div class="table-shell">
             <table class="table category-table">
@@ -2351,28 +1798,16 @@
             </table>
           </div>
         </div>
-
         <div class="empty mini category-search-empty" id="categoryManageEmpty" hidden>
-
-          <div class="empty-art">--</div>
-
+          <div class="empty-art">🔍</div>
           <p>No categories match your search.</p>
-
         </div>
-
       {% else %}
-
         <div class="empty mini">
-
-          <div class="empty-art">--</div>
-
+          <div class="empty-art">📁</div>
           <p>No categories added yet.</p>
-
         </div>
-
       {% endif %}
-
-
 
       <div class="modal-backdrop category-modal" id="addCategoryModal">
 
@@ -2539,20 +1974,21 @@
         <p class="muted tiny">Selected products <span id="batchSelectionCount">(0)</span></p>
         <div class="selection-chips" id="batchSelectionList"></div>
       </div>
-      <div class="modal-actions">
-        <span class="selected-counter" id="batchSelectionHint">Pick at least one product to continue.</span>
 
-        <button class="btn btn-soft" type="button" data-stock-picker-close>Cancel</button>
+    </div>
 
-        <button class="btn btn-secondary" type="button" id="prepareBatchBtn">
+    <div class="modal-actions" style="padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.07); flex-shrink: 0;">
+      <span class="selected-counter" id="batchSelectionHint">Pick at least one product to continue.</span>
 
-          <span class="btn-ic">></span>
+      <button class="btn btn-soft" type="button" data-stock-picker-close>Cancel</button>
 
-          <span>Continue to details</span>
+      <button class="btn btn-secondary" type="button" id="prepareBatchBtn">
 
-        </button>
+        <span class="btn-ic">></span>
 
-      </div>
+        <span>Continue to details</span>
+
+      </button>
 
     </div>
 
@@ -2591,15 +2027,17 @@
           </table>
         </div>
 
-        <div class="modal-actions">
-          <button class="btn btn-soft" type="button" id="resetBatchSelection">Back to selection</button>
-          <button type="submit" class="btn btn-secondary">
-            <span class="btn-ic">+</span>
-            <span>Save Restock</span>
-          </button>
-        </div>
       </form>
     </div>
+
+    <div class="modal-actions" style="padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.07); flex-shrink: 0;">
+      <button class="btn btn-soft" type="button" id="resetBatchSelection">Back to selection</button>
+      <button type="submit" form="multiBatchForm" class="btn btn-secondary">
+        <span class="btn-ic">+</span>
+        <span>Save Restock</span>
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -2864,7 +2302,7 @@
 </div>
 
 <div class="modal-backdrop" id="walletHistoryDetailModal">
-  <div class="modal">
+  <div class="modal" style="max-width: 95% !important; width: 95% !important; height: 85vh !important; max-height: 85vh !important;">
     <div class="modal-head">
       <div>
         <p class="modal-title" id="walletHistoryDetailTitle">Wallet activity</p>
@@ -2872,12 +2310,27 @@
       </div>
       <button class="icon-btn" type="button" data-wallet-history-close>&times;</button>
     </div>
-    <div class="modal-body">
-      <div class="wallet-history-detail-meta">
+    <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; height: calc(100% - 70px);">
+      <div class="wallet-history-detail-meta" style="margin-bottom: 15px; flex-shrink: 0;">
         <span class="wallet-history-badge" id="walletHistoryDetailChannel">Wallet</span>
         <strong id="walletHistoryDetailTotal">PKR 0.00</strong>
       </div>
-      <div class="wallet-history-detail-list" id="walletHistoryDetailList"></div>
+      <div class="table-wrap" style="flex-grow: 1; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; background: rgba(255, 255, 255, 0.02); height: 100%;">
+        <table class="table" style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
+          <thead>
+            <tr>
+              <th style="width: 60px;">Sr.</th>
+              <th style="width: 100px;">Time</th>
+              <th>Details / Note</th>
+              <th style="text-align: right; width: 150px;">Amount</th>
+              <th style="text-align: right; width: 150px;" id="walletHistoryDetailProfitHeader">Profit</th>
+            </tr>
+          </thead>
+          <tbody id="walletHistoryDetailList">
+            <!-- Table rows dynamically populated -->
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -2904,6 +2357,196 @@
         <button class="cash-history-filter" type="button" data-cash-history-filter="other">Other</button>
       </div>
       <div class="wallet-history-detail-list" id="expenseHistoryDetailList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="quickActionsModal">
+  <div class="modal" style="max-width: 95% !important; width: 95% !important; height: 90vh !important; max-height: 90vh !important;">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 800;">Quick Actions</p>
+        <p class="modal-title" style="font-size: 24px; font-weight: 900; color: #fff; margin: 4px 0 0;">Select an Action</p>
+        <p class="modal-sub" style="margin: 6px 0 0; color: var(--muted); font-size: 13px;">Execute common retail transactions instantly.</p>
+      </div>
+      <button class="icon-btn" type="button" data-quick-actions-close>&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 24px; display: flex; flex-direction: column; gap: 28px; max-height: calc(90vh - 120px); overflow-y: auto;">
+      
+      <!-- Section 1: Inventory & Sales -->
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+          <span style="font-size: 18px;">📦</span>
+          <h3 style="margin: 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent);">Inventory & Sales</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+
+          <div class="quick-action-card" data-trigger-btn="openRestockFab">
+            <div style="font-size: 32px; background: rgba(255, 255, 255, 0.04); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0;">📦</div>
+            <div style="flex-grow: 1;">
+              <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #fff;">Add Stock / Restock</h4>
+              <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5;">New inventory arrived? Log the purchase rate, quantity and batch date to keep your stock levels accurate.</p>
+            </div>
+          </div>
+
+          <div class="quick-action-card" data-trigger-btn="openSalePicker">
+            <div style="font-size: 32px; background: rgba(255, 255, 255, 0.04); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0;">🛒</div>
+            <div style="flex-grow: 1;">
+              <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #fff;">New Sale / Checkout</h4>
+              <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5;">Pick products, set quantities and complete a customer sale. Supports counter cash and online payment methods.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 2: Mobile & Digital Financials -->
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+          <span style="font-size: 18px;">💸</span>
+          <h3 style="margin: 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent);">Mobile & Digital Financials</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+
+          <div class="quick-action-card" data-trigger-btn="openFinanceCashInModal">
+            <div style="font-size: 32px; background: rgba(255, 255, 255, 0.04); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0;">💸</div>
+            <div style="flex-grow: 1;">
+              <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #fff;">Easypaisa / JazzCash Wallet</h4>
+              <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5;">Record a deposit (Cash In) or a withdrawal/payout (Cash Out) for your Easypaisa or JazzCash mobile wallet accounts.</p>
+            </div>
+          </div>
+
+          <div class="quick-action-card" data-trigger-btn="openFinanceOutModal">
+            <div style="font-size: 32px; background: rgba(255, 255, 255, 0.04); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0;">⚡</div>
+            <div style="flex-grow: 1;">
+              <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #fff;">Network Easyload / Recharge</h4>
+              <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5;">Purchase balance for Zong, Jazz, Telenor or Ufone networks. Tracks recharge cost, network credit and expected profit automatically.</p>
+            </div>
+          </div>
+
+          <div class="quick-action-card" data-trigger-btn="openWalletProfitModal">
+            <div style="font-size: 32px; background: rgba(255, 255, 255, 0.04); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0;">📈</div>
+            <div style="flex-grow: 1;">
+              <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #fff;">Wallet Commission / Profit</h4>
+              <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5;">Log the service fee or commission earned from Easypaisa or JazzCash transactions. Routes profit to your chosen digital or counter destination.</p>
+            </div>
+          </div>
+
+          <div class="quick-action-card" data-trigger-btn="openPackageProfitModal">
+            <div style="font-size: 32px; background: rgba(255, 255, 255, 0.04); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0;">🎁</div>
+            <div style="flex-grow: 1;">
+              <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #fff;">Package / Bundle Profit</h4>
+              <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5;">Record earnings from data or voice packages sold. Specify the network, amount and target cash bucket to save the profit entry.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 3: Counter & Cash Management -->
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+          <span style="font-size: 18px;">💵</span>
+          <h3 style="margin: 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent);">Counter & Cash Management</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+
+          <div class="quick-action-card" data-trigger-btn="openSystemCashQuickAction">
+            <div style="font-size: 32px; background: rgba(255, 255, 255, 0.04); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0;">💵</div>
+            <div style="flex-grow: 1;">
+              <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #fff;">Counter Cash Entry</h4>
+              <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5;">Add or deduct from your physical counter cash drawer — owner top-ups, manual expenses, or miscellaneous adjustments with a custom reason.</p>
+            </div>
+          </div>
+
+          <div class="quick-action-card" data-trigger-btn="openCashTransferModal">
+            <div style="font-size: 32px; background: rgba(255, 255, 255, 0.04); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0;">🔄</div>
+            <div style="flex-grow: 1;">
+              <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #fff;">Transfer Between Accounts</h4>
+              <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5;">Move a specific amount from one cash source to another — e.g. Counter → Online Cash, Easypaisa → Counter, or any combination. Balance is validated before transfer.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Cash Transfer Modal -->
+<div class="modal-backdrop" id="cashTransferModal"
+     data-bal-counter="{{ counter_cash_total or 0 }}"
+     data-bal-online="{{ online_cash_total or 0 }}"
+     data-bal-easypaisa="{{ easypaisa_cash_total or 0 }}"
+     data-bal-jazzcash="{{ jazzcash_cash_total or 0 }}">
+  <div class="modal wallet-profit-modal" style="width:90% !important; max-width:580px !important;">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow" style="margin:0; font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:800;">Cash Management</p>
+        <p class="modal-title" style="margin:4px 0 0;">Internal Cash Transfer</p>
+        <p class="modal-sub" style="margin:4px 0 0;">Move funds between your cash buckets and digital wallets.</p>
+      </div>
+      <button class="icon-btn" type="button" data-cash-transfer-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <form method="post" action="{{ url_for('manager.transfer_cash') }}" class="wallet-profit-form" id="cashTransferForm">
+        <input type="hidden" name="return_url" value="{{ request.full_path if request.query_string else request.path }}">
+
+        <!-- Source -->
+        <label class="field field-inline">
+          <span>From</span>
+          <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+            <select name="source" id="cashTransferSource" required style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); color:var(--text); padding:8px 12px; border-radius:8px; font-weight:500; width:100%;">
+              <option value="counter">Counter Cash</option>
+              <option value="online">Online Cash</option>
+              <option value="easypaisa">Easypaisa Wallet</option>
+              <option value="jazzcash">JazzCash Wallet</option>
+            </select>
+            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:8px; padding:7px 12px; font-size:12px;">
+              <span style="color:var(--muted);">Available</span>
+              <strong id="cashTransferSourceBal" style="color:#4ade80;">PKR 0.00</strong>
+            </div>
+          </div>
+        </label>
+
+        <!-- Arrow indicator -->
+        <div style="text-align:center; font-size:22px; margin:-4px 0; color:var(--muted);">⬇️</div>
+
+        <!-- Target -->
+        <label class="field field-inline">
+          <span>To</span>
+          <select name="target" id="cashTransferTarget" required style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); color:var(--text); padding:8px 12px; border-radius:8px; font-weight:500;">
+            <option value="online">Online Cash</option>
+            <option value="counter">Counter Cash</option>
+            <option value="easypaisa">Easypaisa Wallet</option>
+            <option value="jazzcash">JazzCash Wallet</option>
+          </select>
+        </label>
+
+        <!-- Amount -->
+        <label class="field field-inline">
+          <span>Amount</span>
+          <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+            <input type="number" name="amount" id="cashTransferAmount" min="0.01" step="0.01" placeholder="e.g. 5000" required style="width:100%;">
+            <div id="cashTransferInsufficientWarn" hidden style="display:flex; align-items:center; gap:8px; background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); border-radius:8px; padding:8px 12px; font-size:12px; color:#f87171;">
+              <span>⚠️</span>
+              <span id="cashTransferInsufficientMsg">Insufficient balance.</span>
+            </div>
+          </div>
+        </label>
+
+        <!-- Note -->
+        <label class="field field-inline">
+          <span>Note</span>
+          <input type="text" name="note" id="cashTransferNote" placeholder="e.g. Moving funds to online account" style="width:100%;">
+        </label>
+
+        <div class="modal-actions">
+          <button class="btn btn-soft" type="button" data-cash-transfer-close>Cancel</button>
+          <button class="btn btn-primary" type="submit" id="cashTransferSubmitBtn">Transfer Funds</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -3076,7 +2719,7 @@
       <span></span>
     </span>
   </button>
-  <div class="wallet-fab-actions" id="quickActionGroup" hidden>
+  <div class="wallet-fab-actions" id="quickActionGroup" style="display: none !important;" hidden>
   <button
     class="wallet-fab wallet-fab-restock"
     type="button"
@@ -3137,7 +2780,11 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="financeModal">
+<div class="modal-backdrop" id="financeModal" 
+     data-bal-counter="{{ counter_cash_total or 0 }}"
+     data-bal-online="{{ online_cash_total or 0 }}"
+     data-bal-easypaisa="{{ easypaisa_cash_total or 0 }}"
+     data-bal-jazzcash="{{ jazzcash_cash_total or 0 }}">
   <div class="modal wallet-profit-modal">
     <div class="modal-head">
       <div>
@@ -3149,14 +2796,39 @@
     <div class="modal-body">
       <form method="post" action="{{ url_for('manager.record_finance_transaction') }}" class="wallet-profit-form">
         <input type="hidden" name="return_url" value="{{ request.full_path if request.query_string else request.path }}">
-        <input type="hidden" name="mode" id="financeModeInput" value="cash_in">
-        <label class="field field-inline">
+        <label class="field field-inline" id="financeModeField">
+          <span>Transaction Type</span>
+          <select name="mode" id="financeModeInput" required style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text); padding: 8px 12px; border-radius: 8px; font-weight: 500;">
+            <option value="cash_in">Cash In (Receive)</option>
+            <option value="out">Cash Out (Send / Expense)</option>
+          </select>
+        </label>
+        <label class="field field-inline" id="financeCategoryField">
           <span>Sub Category</span>
           <select name="category" id="financeCategory" required>
             <option value="easypaisa">Easypaisa</option>
             <option value="jazzcash">JazzCash</option>
             <option value="easyload">All Network Load</option>
           </select>
+        </label>
+        <label class="field field-inline" id="financeEasyloadSourceField" hidden>
+          <span>Paid From</span>
+          <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+            <select id="financeEasyloadSource" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text); padding: 8px 12px; border-radius: 8px; font-weight: 500; width:100%;">
+              <option value="counter">Counter Cash</option>
+              <option value="online">Online Cash</option>
+              <option value="easypaisa">Easypaisa Wallet</option>
+              <option value="jazzcash">JazzCash Wallet</option>
+            </select>
+            <div id="financeSourceBalanceBadge" style="display:flex; align-items:center; justify-content:space-between; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius:8px; padding:7px 12px; font-size:12px;">
+              <span style="color:var(--muted);">Available Balance</span>
+              <strong id="financeSourceBalanceAmt" style="color:#fff;">PKR 0.00</strong>
+            </div>
+            <div id="financeInsufficientWarn" hidden style="display:flex; align-items:center; gap:8px; background: rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:8px 12px; font-size:12px; color:#f87171;">
+              <span>⚠️</span>
+              <span id="financeInsufficientMsg">Insufficient balance for this transaction.</span>
+            </div>
+          </div>
         </label>
         <label class="field field-inline" id="financeNetworkField" hidden>
           <span>Network</span>
@@ -3216,10 +2888,12 @@
       <form method="post" action="{{ url_for('manager.refresh_wallet_balances') }}" class="wallet-profit-form">
         <input type="hidden" name="return_url" value="{{ request.full_path if request.query_string else request.path }}">
         <div class="wallet-refresh-grid">
-          <div class="wallet-refresh-card">
-            <div>
-              <p class="eyebrow">Easypaisa</p>
-              <strong>System: PKR {{ '%.2f'|format(easypaisa_cash_total or 0) }}</strong>
+          <div class="wallet-refresh-card easypaisa-card">
+            <div class="wallet-refresh-header">
+              <div class="wallet-refresh-title">
+                <p class="eyebrow">Easypaisa</p>
+                <strong>System: PKR {{ '%.2f'|format(easypaisa_cash_total or 0) }}</strong>
+              </div>
             </div>
             <label class="field field-inline">
               <span>Actual Balance</span>
@@ -3236,10 +2910,12 @@
             </label>
             <p class="wallet-refresh-diff" id="walletRefreshEasypaisaDiff">Difference: PKR 0.00</p>
           </div>
-          <div class="wallet-refresh-card">
-            <div>
-              <p class="eyebrow">JazzCash</p>
-              <strong>System: PKR {{ '%.2f'|format(jazzcash_cash_total or 0) }}</strong>
+          <div class="wallet-refresh-card jazzcash-card">
+            <div class="wallet-refresh-header">
+              <div class="wallet-refresh-title">
+                <p class="eyebrow">JazzCash</p>
+                <strong>System: PKR {{ '%.2f'|format(jazzcash_cash_total or 0) }}</strong>
+              </div>
             </div>
             <label class="field field-inline">
               <span>Actual Balance</span>
@@ -3284,10 +2960,12 @@
         <input type="hidden" name="return_url" value="{{ request.full_path if request.query_string else request.path }}">
         <div class="wallet-refresh-grid">
           {% for channel in easyload_channels %}
-          <div class="wallet-refresh-card">
-            <div>
-              <p class="eyebrow">{{ channel.label }}</p>
-              <strong>System: PKR {{ '%.2f'|format(channel.balance_total or 0) }}</strong>
+          <div class="wallet-refresh-card {{ channel.key }}-card">
+            <div class="wallet-refresh-header">
+              <div class="wallet-refresh-title">
+                <p class="eyebrow">{{ channel.label }}</p>
+                <strong>System: PKR {{ '%.2f'|format(channel.balance_total or 0) }}</strong>
+              </div>
             </div>
             <label class="field field-inline">
               <span>Actual Balance</span>
@@ -3361,14 +3039,7 @@
           <span id="walletProfitAmountLabel">Profit Amount</span>
           <input type="number" name="amount" id="walletProfitAmountInput" min="0.01" step="0.01" placeholder="e.g. 500" required>
         </label>
-        <label class="field field-inline">
-          <span>Reason</span>
-          <select id="walletProfitReason" required></select>
-        </label>
-        <label class="field field-inline">
-          <span>Message</span>
-          <input type="text" name="note" id="walletProfitNoteInput" placeholder="e.g. Commission settled today">
-        </label>
+
         <div class="modal-actions">
           <button class="btn btn-soft" type="button" data-wallet-profit-close>Cancel</button>
           <button class="btn btn-primary" type="submit">Save Profit</button>
@@ -3451,17 +3122,17 @@
     <div class="modal-head">
       <div>
         <p class="modal-title">Package Profit</p>
-        <p class="modal-sub">Record package profit in or reverse an accidental entry with profit out.</p>
+        <p class="modal-sub">Record package profit directly into counter cash.</p>
       </div>
       <button class="icon-btn" type="button" data-package-profit-close>&times;</button>
     </div>
     <div class="modal-body">
       <form method="post" action="{{ url_for('manager.add_package_profit') }}" class="wallet-profit-form">
         <input type="hidden" name="return_url" value="{{ request.full_path if request.query_string else request.path }}">
-        <label class="field field-inline">
+        <label class="field field-inline" style="display: none;">
           <span>Type</span>
           <select name="entry_type" id="packageProfitEntryType" required>
-            <option value="profit_in">Profit In</option>
+            <option value="profit_in" selected>Profit In</option>
             <option value="profit_out">Profit Out</option>
           </select>
         </label>
@@ -3469,23 +3140,62 @@
           <span>Amount</span>
           <input type="number" name="amount" id="packageProfitAmountInput" min="0.01" step="0.01" placeholder="e.g. 500" required>
         </label>
-        <label class="field field-inline">
+        <label class="field field-inline" style="display: none;">
           <span>Reason</span>
           <select id="packageProfitReason" required></select>
         </label>
-        <label class="field field-inline">
+        <label class="field field-inline" style="display: none;">
           <span id="packageProfitMessageLabel">Message</span>
           <input type="text" name="note" id="packageProfitNoteInput" placeholder="e.g. Package commission received" required>
         </label>
-        <div class="cash-record-message-box">
+        <label class="field field-inline">
           <span>Destination</span>
-          <p>Counter Cash</p>
-        </div>
+          <select name="cash_bucket" id="packageProfitDestination" required>
+            <option value="counter" selected>Counter Cash</option>
+            <option value="online">Online Cash</option>
+          </select>
+        </label>
         <div class="modal-actions">
           <button class="btn btn-soft" type="button" data-package-profit-close>Cancel</button>
           <button class="btn btn-primary" type="submit" id="packageProfitSubmitBtn">Save Package Profit</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="productRestocksModal">
+  <div class="modal wallet-profit-modal" style="max-width: 900px !important; height: 80vh !important; max-height: 80vh !important;">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow" id="restocksEyebrow" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 800;">Purchase History</p>
+        <p class="modal-title" id="restocksProductTitle" style="font-size: 24px; font-weight: 900; color: #fff; margin: 4px 0 0;">Product Name</p>
+        <p class="modal-sub" id="restocksProductMeta" style="margin: 6px 0 0; color: var(--muted); font-size: 13px;">Brand · Category · On Hand: 0 units</p>
+      </div>
+      <button class="icon-btn" type="button" data-restocks-close>&times;</button>
+    </div>
+    <div class="modal-body" style="overflow-y: auto; padding: 20px; display: block !important;">
+      <div class="table-wrap">
+        <table class="table" id="restocksTable">
+          <thead>
+            <tr>
+              <th style="width: 60px;">Sr.</th>
+              <th>Restock Date</th>
+              <th>Quantity</th>
+              <th>Purchase Rate</th>
+              <th>Total Spend</th>
+              <th>Sale Price</th>
+            </tr>
+          </thead>
+          <tbody id="restocksTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+      <div id="restocksEmptyState" hidden class="empty mini">
+        <div class="empty-art">📦</div>
+        <p>No restocks recorded for this product yet.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -4406,10 +4116,36 @@
     setQuickActionsOpen(false);
     openStockPickerModal();
   });
+  const quickActionsModal = document.getElementById("quickActionsModal");
   toggleQuickActions?.addEventListener("click", evt=>{
+    evt.preventDefault();
     evt.stopPropagation();
-    const willOpen = quickActionGroup?.hidden ?? true;
-    setQuickActionsOpen(willOpen);
+    quickActionsModal?.classList.add("show");
+  });
+
+  document.querySelectorAll("[data-quick-actions-close]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      quickActionsModal?.classList.remove("show");
+    });
+  });
+
+  if(quickActionsModal){
+    quickActionsModal.addEventListener("click", evt=>{
+      if(evt.target === quickActionsModal){
+        quickActionsModal.classList.remove("show");
+      }
+    });
+  }
+
+  document.querySelectorAll(".quick-action-card").forEach(card=>{
+    card.addEventListener("click", ()=>{
+      quickActionsModal?.classList.remove("show");
+      const targetId = card.dataset.triggerBtn;
+      const targetBtn = document.getElementById(targetId);
+      if(targetBtn){
+        targetBtn.click();
+      }
+    });
   });
 
   document.querySelectorAll("[data-stock-picker-close]").forEach(btn=>{
@@ -5617,8 +5353,16 @@
   const financeModalTitle = document.getElementById("financeModalTitle");
   const financeModalSub = document.getElementById("financeModalSub");
   const financeModeInput = document.getElementById("financeModeInput");
+  const financeModeField = document.getElementById("financeModeField");
   const financeCategory = document.getElementById("financeCategory");
-    const financeNetworkField = document.getElementById("financeNetworkField");
+  const financeCategoryField = document.getElementById("financeCategoryField");
+  const financeEasyloadSourceField = document.getElementById("financeEasyloadSourceField");
+  const financeEasyloadSource = document.getElementById("financeEasyloadSource");
+  const financeSourceBalanceBadge = document.getElementById("financeSourceBalanceBadge");
+  const financeSourceBalanceAmt = document.getElementById("financeSourceBalanceAmt");
+  const financeInsufficientWarn = document.getElementById("financeInsufficientWarn");
+  const financeInsufficientMsg = document.getElementById("financeInsufficientMsg");
+  const financeNetworkField = document.getElementById("financeNetworkField");
   const financeNetwork = document.getElementById("financeNetwork");
   const financeChannelIcon = document.getElementById("financeChannelIcon");
   const financeAmountLabel = document.getElementById("financeAmountLabel");
@@ -5653,10 +5397,8 @@
   const walletProfitChannelIcon = document.getElementById("walletProfitChannelIcon");
   const walletEntryType = document.getElementById("walletEntryType");
   const walletProfitDestination = document.getElementById("walletProfitDestination");
-  const walletProfitReason = document.getElementById("walletProfitReason");
   const walletProfitAmountLabel = document.getElementById("walletProfitAmountLabel");
   const walletProfitAmountInput = document.getElementById("walletProfitAmountInput");
-  const walletProfitNoteInput = document.getElementById("walletProfitNoteInput");
   const packageProfitEntryType = document.getElementById("packageProfitEntryType");
   const packageProfitReason = document.getElementById("packageProfitReason");
   const packageProfitMessageLabel = document.getElementById("packageProfitMessageLabel");
@@ -5727,7 +5469,17 @@
   };
 
   const getWalletCashInDefaultNote = ()=> `Cash transferred from counter to ${getFinanceCategoryLabel()}`;
-  const getFinanceEasyloadDefaultNote = ()=> `Cash transferred from counter to ${getFinanceNetworkLabel()} easyload`;
+  const getFinanceEasyloadDefaultNote = ()=>{
+    const sourceVal = financeEasyloadSource?.value || "counter";
+    if (sourceVal === "easypaisa") {
+      return `Transferred from Easypaisa to ${getFinanceNetworkLabel()} easyload`;
+    } else if (sourceVal === "jazzcash") {
+      return `Transferred from JazzCash to ${getFinanceNetworkLabel()} easyload`;
+    } else if (sourceVal === "online") {
+      return `Transferred from online cash to ${getFinanceNetworkLabel()} easyload`;
+    }
+    return `Cash transferred from counter to ${getFinanceNetworkLabel()} easyload`;
+  };
   const getEasyloadDefaultNote = ()=> `Cash transferred from counter to ${getEasyloadChannelLabel()} easyload`;
   const systemCashReasons = {
     add: [
@@ -5751,8 +5503,7 @@
   };
   const packageProfitReasons = {
     profit_in: [
-      { value: "package_profit", label: "Package Profit", message: "Package profit added to counter cash" },
-      { value: "custom", label: "Custom", message: "" }
+      { value: "package_profit", label: "Package Profit", message: "Package profit added" }
     ],
     profit_out: [
       { value: "mistake_reversal", label: "Mistake Reversal", message: "Package profit removed from counter cash" },
@@ -5820,26 +5571,38 @@
     const category = financeCategory.value || "easypaisa";
     const isEasyload = category === "easyload";
     const hasDefaultCashInNote = mode === "cash_in";
-      const network = financeNetwork?.value || "zong";
+    const network = financeNetwork?.value || "zong";
     const rate = Number(easyloadRates[network] || 0);
     const amount = Number(financeAmountInput?.value || 1000);
     const safeAmount = Number.isFinite(amount) && amount > 0 ? amount : 0;
     const expectedProfit = mode === "cash_in" && isEasyload ? (safeAmount / 1000) * rate : 0;
 
+    if (financeModeField) {
+      financeModeField.hidden = isEasyload;
+    }
+    if (financeCategoryField) {
+      financeCategoryField.hidden = isEasyload;
+    }
+    if (financeEasyloadSourceField) {
+      financeEasyloadSourceField.hidden = !isEasyload;
+    }
+
     if(financeModalTitle){
-      financeModalTitle.textContent = mode === "cash_in" ? "Cash In" : "Out";
+      financeModalTitle.textContent = isEasyload ? "Recharge Easyload" : (mode === "cash_in" ? "Cash In" : "Out");
     }
     if(financeModalSub){
-      financeModalSub.textContent = mode === "cash_in"
-        ? "Choose Easypaisa, JazzCash, or All Network Load for cash in."
-        : "Choose Easypaisa, JazzCash, or All Network Load for out.";
+      financeModalSub.textContent = isEasyload
+        ? "Add new network load balance from a mobile wallet or counter cash."
+        : (mode === "cash_in"
+          ? "Choose Easypaisa, JazzCash, or All Network Load for cash in."
+          : "Choose Easypaisa, JazzCash, or All Network Load for out.");
     }
     if(financeNetworkField){
       financeNetworkField.hidden = !isEasyload;
     }
-      if(financeAmountLabel){
-        financeAmountLabel.textContent = isEasyload && mode === "cash_in" ? "Purchase Amount" : "Amount";
-      }
+    if(financeAmountLabel){
+      financeAmountLabel.textContent = isEasyload ? "Recharge Amount" : "Amount";
+    }
     if(financeAmountInput){
       financeAmountInput.placeholder = isEasyload ? "e.g. 1000" : "e.g. 5000";
     }
@@ -5858,17 +5621,15 @@
         delete financeNoteInput.dataset.autoDefault;
       }
       if(isEasyload){
+        financeNoteInput.placeholder = "e.g. Purchased network balance";
+      }else{
         financeNoteInput.placeholder = mode === "cash_in"
-          ? "e.g. Purchased Zong balance"
-          : "e.g. Sold load to customer";
-        }else{
-          financeNoteInput.placeholder = mode === "cash_in"
-            ? "e.g. Cash received from customer"
-            : "e.g. Sent amount to customer";
-        }
+          ? "e.g. Cash received from customer"
+          : "e.g. Sent amount to customer";
       }
+    }
     if(financePreviewCard){
-      financePreviewCard.hidden = !(isEasyload && mode === "cash_in");
+      financePreviewCard.hidden = !isEasyload;
     }
     if(financeChannelIcon){
       financeChannelIcon.src = isEasyload
@@ -5881,20 +5642,62 @@
     if(financeProfitPreview){
       financeProfitPreview.textContent = `PKR ${expectedProfit.toFixed(2)}`;
     }
-      if(financeSubmitBtn){
-        financeSubmitBtn.textContent = mode === "cash_in" ? "Save Cash In" : "Save Out";
+    if(financeSubmitBtn){
+      financeSubmitBtn.textContent = isEasyload ? "Confirm Recharge" : (mode === "cash_in" ? "Save Cash In" : "Save Out");
+    }
+
+    // --- Balance validation for Easyload recharge ---
+    if(isEasyload && financeEasyloadSource){
+      const sourceVal = financeEasyloadSource.value || "counter";
+      const modalEl = document.getElementById("financeModal");
+      const balances = {
+        counter:   Number(modalEl?.dataset.balCounter  || 0),
+        online:    Number(modalEl?.dataset.balOnline   || 0),
+        easypaisa: Number(modalEl?.dataset.balEasypaisa|| 0),
+        jazzcash:  Number(modalEl?.dataset.balJazzcash || 0),
+      };
+      const sourceBal = balances[sourceVal] ?? 0;
+      const sourceLabels = {
+        counter:   "Counter Cash",
+        online:    "Online Cash",
+        easypaisa: "Easypaisa Wallet",
+        jazzcash:  "JazzCash Wallet",
+      };
+      if(financeSourceBalanceAmt){
+        financeSourceBalanceAmt.textContent = `PKR ${sourceBal.toLocaleString("en-PK", {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+        financeSourceBalanceAmt.style.color = sourceBal > 0 ? "#4ade80" : "#f87171";
       }
+      const enteredAmt = Number(financeAmountInput?.value || 0);
+      const isInsufficient = enteredAmt > 0 && enteredAmt > sourceBal;
+      if(financeInsufficientWarn){
+        financeInsufficientWarn.hidden = !isInsufficient;
+        financeInsufficientWarn.style.display = isInsufficient ? "flex" : "none";
+      }
+      if(financeInsufficientMsg && isInsufficient){
+        financeInsufficientMsg.textContent = `${sourceLabels[sourceVal]} only has PKR ${sourceBal.toFixed(2)} available. Reduce the amount to proceed.`;
+      }
+      if(financeSubmitBtn){
+        financeSubmitBtn.disabled = isInsufficient;
+        financeSubmitBtn.style.opacity = isInsufficient ? "0.45" : "";
+        financeSubmitBtn.style.cursor  = isInsufficient ? "not-allowed" : "";
+      }
+    } else {
+      // Reset validation state for non-easyload mode
+      if(financeInsufficientWarn){ financeInsufficientWarn.hidden = true; financeInsufficientWarn.style.display = "none"; }
+      if(financeSubmitBtn){ financeSubmitBtn.disabled = false; financeSubmitBtn.style.opacity = ""; financeSubmitBtn.style.cursor = ""; }
+    }
   };
 
   const openWalletHistoryDetailModal = ({ channel, day, total, entries, title, totalLabel })=>{
     if(!walletHistoryDetailModal || !walletHistoryDetailList){
       return;
     }
+    const safeEntries = Array.isArray(entries) ? entries : [];
     if(walletHistoryDetailTitle){
       walletHistoryDetailTitle.textContent = title || `${channel} activity`;
     }
     if(walletHistoryDetailSub){
-      walletHistoryDetailSub.textContent = `${day} | ${entries.length} entr${entries.length === 1 ? "y" : "ies"}`;
+      walletHistoryDetailSub.textContent = `${day} | ${safeEntries.length} entr${safeEntries.length === 1 ? "y" : "ies"}`;
     }
     if(walletHistoryDetailChannel){
       walletHistoryDetailChannel.textContent = channel;
@@ -5902,39 +5705,79 @@
     if(walletHistoryDetailTotal){
       walletHistoryDetailTotal.textContent = totalLabel || `PKR ${total}`;
     }
+
+    const hasProfitColumn = safeEntries.some(e => e && e.profit_amount !== undefined && e.profit_amount !== null);
+    const profitHeader = document.getElementById("walletHistoryDetailProfitHeader");
+    if(profitHeader){
+      profitHeader.style.display = hasProfitColumn ? "" : "none";
+    }
+
     walletHistoryDetailList.innerHTML = "";
-    entries.forEach((entry, index)=>{
-      const row = document.createElement("div");
-      row.className = "wallet-history-detail-item wallet-history-detail-record";
+    safeEntries.forEach((entry, index)=>{
+      if(!entry) return;
+      const tr = document.createElement("tr");
 
-      const sr = document.createElement("span");
-      sr.className = "wallet-history-sr";
-      sr.textContent = `${index + 1}.`;
+      // 1. Sr.
+      const tdSr = document.createElement("td");
+      tdSr.className = "product-sr-cell";
+      tdSr.textContent = index + 1;
 
-      const amount = document.createElement("strong");
-      amount.className = "wallet-history-record-amount";
-      amount.textContent = `PKR ${Number(entry.amount || 0).toFixed(2)}`;
-
-      const meta = document.createElement("small");
-      meta.className = "wallet-history-record-time";
+      // 2. Time
+      const tdTime = document.createElement("td");
       const parsed = entry.created_at ? new Date(String(entry.created_at).replace(" ", "T")) : null;
       const timeLabel = parsed && !Number.isNaN(parsed.getTime())
         ? parsed.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })
         : (entry.created_at || "");
-      const typePart = entry.entry_label ? ` | ${entry.entry_label}` : "";
-      const profitPart = entry.profit_amount ? ` | Profit ${Number(entry.profit_amount).toFixed(2)}` : "";
-      const notePart = entry.note ? ` | ${entry.note}` : "";
-      meta.textContent = `${timeLabel}${typePart}${profitPart}${notePart}`;
+      tdTime.textContent = timeLabel;
 
-      row.append(sr, amount, meta);
-      walletHistoryDetailList.append(row);
+      // 3. Details
+      const tdDetails = document.createElement("td");
+      const labelSpan = document.createElement("strong");
+      labelSpan.style.color = "#fff";
+      labelSpan.style.display = "block";
+      labelSpan.textContent = entry.entry_label || "";
+      const noteSpan = document.createElement("span");
+      noteSpan.className = "muted";
+      noteSpan.style.fontSize = "11px";
+      noteSpan.textContent = entry.note || "";
+      tdDetails.append(labelSpan, noteSpan);
+
+      // 4. Amount
+      const tdAmount = document.createElement("td");
+      tdAmount.style.textAlign = "right";
+      tdAmount.textContent = `PKR ${Number(entry.amount || 0).toFixed(2)}`;
+
+      tr.append(tdSr, tdTime, tdDetails, tdAmount);
+
+      // 5. Profit
+      if(hasProfitColumn){
+        const tdProfit = document.createElement("td");
+        tdProfit.style.textAlign = "right";
+        tdProfit.style.fontWeight = "bold";
+        tdProfit.style.color = "var(--accent-2, #38bdf8)";
+        if(entry.profit_amount !== undefined && entry.profit_amount !== null){
+          tdProfit.textContent = `PKR ${Number(entry.profit_amount || 0).toFixed(2)}`;
+        } else {
+          tdProfit.textContent = "-";
+        }
+        tr.append(tdProfit);
+      }
+
+      walletHistoryDetailList.append(tr);
     });
-    if(!entries.length){
-      const empty = document.createElement("p");
-      empty.className = "muted";
-      empty.textContent = "No entries found for this date.";
-      walletHistoryDetailList.append(empty);
+
+    if(!safeEntries.length){
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = hasProfitColumn ? 5 : 4;
+      td.style.textAlign = "center";
+      td.style.padding = "24px";
+      td.className = "muted";
+      td.textContent = "No entries found for this date.";
+      tr.append(td);
+      walletHistoryDetailList.append(tr);
     }
+
     walletHistoryDetailModal.classList.add("show");
   };
 
@@ -6210,29 +6053,6 @@
     }
   };
 
-  const syncWalletProfitReasonMessage = ()=>{
-    if(!walletProfitReason || !walletProfitNoteInput || !walletProfitDestination){
-      return;
-    }
-    const reasons = walletProfitReasons[walletProfitDestination.value] || walletProfitReasons.wallet;
-    const selectedReason = reasons.find(reason=> reason.value === walletProfitReason.value) || reasons[0];
-    if(selectedReason.value === "custom"){
-      if(walletProfitNoteInput.dataset.autoReason === "1"){
-        walletProfitNoteInput.value = "";
-      }
-      walletProfitNoteInput.readOnly = false;
-      walletProfitNoteInput.placeholder = walletProfitDestination.value === "counter"
-        ? "e.g. Shifted wallet profit to counter"
-        : "e.g. Commission settled today";
-      delete walletProfitNoteInput.dataset.autoReason;
-      return;
-    }
-    walletProfitNoteInput.value = selectedReason.message;
-    walletProfitNoteInput.readOnly = true;
-    walletProfitNoteInput.placeholder = selectedReason.message;
-    walletProfitNoteInput.dataset.autoReason = "1";
-  };
-
   const syncWalletChannelIcon = ()=>{
     if(!walletProfitChannel || !walletProfitChannelIcon){
       return;
@@ -6251,17 +6071,6 @@
     if(walletProfitAmountInput){
       walletProfitAmountInput.placeholder = "e.g. 250";
     }
-    if(walletProfitReason){
-      const reasons = walletProfitReasons[walletProfitDestination?.value || "wallet"] || walletProfitReasons.wallet;
-      walletProfitReason.innerHTML = "";
-      reasons.forEach(reason=>{
-        const option = document.createElement("option");
-        option.value = reason.value;
-        option.textContent = reason.label;
-        walletProfitReason.append(option);
-      });
-    }
-    syncWalletProfitReasonMessage();
   };
 
   const syncPackageProfitReasonMessage = ()=>{
@@ -6500,6 +6309,110 @@
     syncSystemCashTypeIcon();
     openWalletProfitModal(systemCashModal);
   });
+
+  // ── Cash Transfer Modal ──────────────────────────────────────────────
+  const cashTransferModal        = document.getElementById("cashTransferModal");
+  const cashTransferSource       = document.getElementById("cashTransferSource");
+  const cashTransferTarget       = document.getElementById("cashTransferTarget");
+  const cashTransferAmount       = document.getElementById("cashTransferAmount");
+  const cashTransferNote         = document.getElementById("cashTransferNote");
+  const cashTransferSourceBal    = document.getElementById("cashTransferSourceBal");
+  const cashTransferInsufficientWarn = document.getElementById("cashTransferInsufficientWarn");
+  const cashTransferInsufficientMsg  = document.getElementById("cashTransferInsufficientMsg");
+  const cashTransferSubmitBtn    = document.getElementById("cashTransferSubmitBtn");
+
+  const TRANSFER_SOURCE_LABELS = {
+    counter:   "Counter Cash",
+    online:    "Online Cash",
+    easypaisa: "Easypaisa Wallet",
+    jazzcash:  "JazzCash Wallet",
+  };
+
+  const getCashTransferBalances = ()=>{
+    const el = cashTransferModal;
+    return {
+      counter:   Number(el?.dataset.balCounter   || 0),
+      online:    Number(el?.dataset.balOnline     || 0),
+      easypaisa: Number(el?.dataset.balEasypaisa  || 0),
+      jazzcash:  Number(el?.dataset.balJazzcash   || 0),
+    };
+  };
+
+  const syncCashTransfer = ()=>{
+    const src = cashTransferSource?.value || "counter";
+    const balances = getCashTransferBalances();
+    const srcBal = balances[src] ?? 0;
+
+    // Update source balance badge
+    if(cashTransferSourceBal){
+      cashTransferSourceBal.textContent = `PKR ${srcBal.toLocaleString("en-PK", {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      cashTransferSourceBal.style.color = srcBal > 0 ? "#4ade80" : "#f87171";
+    }
+
+    // Filter target to exclude same as source
+    if(cashTransferTarget){
+      Array.from(cashTransferTarget.options).forEach(opt=>{
+        opt.hidden = opt.value === src;
+      });
+      if(cashTransferTarget.value === src){
+        const first = Array.from(cashTransferTarget.options).find(o => o.value !== src);
+        if(first) cashTransferTarget.value = first.value;
+      }
+    }
+
+    // Amount validation
+    const entered = Number(cashTransferAmount?.value || 0);
+    const isInsufficient = entered > 0 && entered > srcBal;
+    if(cashTransferInsufficientWarn){
+      cashTransferInsufficientWarn.hidden = !isInsufficient;
+      cashTransferInsufficientWarn.style.display = isInsufficient ? "flex" : "none";
+    }
+    if(cashTransferInsufficientMsg && isInsufficient){
+      cashTransferInsufficientMsg.textContent =
+        `${TRANSFER_SOURCE_LABELS[src] || src} only has PKR ${srcBal.toFixed(2)} available.`;
+    }
+    if(cashTransferSubmitBtn){
+      cashTransferSubmitBtn.disabled = isInsufficient;
+      cashTransferSubmitBtn.style.opacity = isInsufficient ? "0.45" : "";
+      cashTransferSubmitBtn.style.cursor  = isInsufficient ? "not-allowed" : "";
+    }
+
+    // Auto-generate note
+    if(cashTransferNote && !cashTransferNote.value){
+      const tgt = cashTransferTarget?.value || "online";
+      cashTransferNote.placeholder = `Transfer from ${TRANSFER_SOURCE_LABELS[src]||src} to ${TRANSFER_SOURCE_LABELS[tgt]||tgt}`;
+    }
+  };
+
+  // Open trigger (from quick-action card)
+  document.addEventListener("click", evt=>{
+    if(evt.target.closest("[data-trigger-btn='openCashTransferModal']")){
+      setQuickActionsOpen(false);
+      // reset form
+      if(cashTransferSource)  cashTransferSource.value = "counter";
+      if(cashTransferTarget)  cashTransferTarget.value = "online";
+      if(cashTransferAmount)  cashTransferAmount.value = "";
+      if(cashTransferNote)    cashTransferNote.value   = "";
+      syncCashTransfer();
+      openWalletProfitModal(cashTransferModal);
+    }
+  });
+
+  // Close buttons
+  document.querySelectorAll("[data-cash-transfer-close]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ cashTransferModal?.classList.remove("show"); });
+  });
+  cashTransferModal?.addEventListener("click", evt=>{
+    if(evt.target === cashTransferModal) cashTransferModal.classList.remove("show");
+  });
+
+  // Live sync
+  cashTransferSource?.addEventListener("change", syncCashTransfer);
+  cashTransferTarget?.addEventListener("change", syncCashTransfer);
+  cashTransferAmount?.addEventListener("input",  syncCashTransfer);
+
+  syncCashTransfer();
+
   openWalletRefreshTrigger?.addEventListener("click", ()=>{
     resetWalletRefreshForm();
     openWalletProfitModal(walletRefreshModal);
@@ -6542,15 +6455,18 @@
   });
   openFinanceCashInModal?.addEventListener("click", ()=>{
     setQuickActionsOpen(false);
+    if(financeCategory){
+      Array.from(financeCategory.options).forEach(opt => {
+        opt.hidden = opt.value === "easyload";
+      });
+      financeCategory.value = "easypaisa";
+    }
     if(financeModeInput){
       financeModeInput.value = "cash_in";
     }
-    if(financeCategory){
-      financeCategory.value = "easypaisa";
+    if(financeNetwork){
+      financeNetwork.value = "zong";
     }
-      if(financeNetwork){
-        financeNetwork.value = "zong";
-      }
     if(financeAmountInput){
       financeAmountInput.value = "";
     }
@@ -6562,15 +6478,18 @@
   });
   openFinanceOutModal?.addEventListener("click", ()=>{
     setQuickActionsOpen(false);
-    if(financeModeInput){
-      financeModeInput.value = "out";
-    }
     if(financeCategory){
-      financeCategory.value = "easypaisa";
+      Array.from(financeCategory.options).forEach(opt => {
+        opt.hidden = opt.value !== "easyload";
+      });
+      financeCategory.value = "easyload";
     }
-      if(financeNetwork){
-        financeNetwork.value = "zong";
-      }
+    if(financeModeInput){
+      financeModeInput.value = "cash_in";
+    }
+    if(financeNetwork){
+      financeNetwork.value = "zong";
+    }
     if(financeAmountInput){
       financeAmountInput.value = "";
     }
@@ -6580,8 +6499,10 @@
     syncFinanceModal();
     openWalletProfitModal(financeModal);
   });
+  financeModeInput?.addEventListener("change", syncFinanceModal);
   financeCategory?.addEventListener("change", syncFinanceModal);
-    financeNetwork?.addEventListener("change", syncFinanceModal);
+  financeNetwork?.addEventListener("change", syncFinanceModal);
+  financeEasyloadSource?.addEventListener("change", syncFinanceModal);
   financeAmountInput?.addEventListener("input", syncFinanceModal);
 
   openWalletProfitTrigger?.addEventListener("click", ()=>{
@@ -6594,9 +6515,6 @@
     }
     if(walletEntryType){
       walletEntryType.value = "profit_in";
-    }
-    if(walletProfitNoteInput){
-      walletProfitNoteInput.value = "";
     }
     syncWalletChannelIcon();
     openWalletProfitModal(walletProfitModal);
@@ -6618,12 +6536,6 @@
   walletProfitChannel?.addEventListener("change", syncWalletChannelIcon);
   walletProfitDestination?.addEventListener("change", syncWalletChannelIcon);
   walletEntryType?.addEventListener("change", syncWalletChannelIcon);
-  walletProfitReason?.addEventListener("change", syncWalletProfitReasonMessage);
-  walletProfitNoteInput?.addEventListener("input", ()=>{
-    if(walletProfitReason?.value !== "custom"){
-      delete walletProfitNoteInput.dataset.autoReason;
-    }
-  });
   openEasyloadTrigger?.addEventListener("click", ()=>{
     setQuickActionsOpen(false);
     if(easyloadChannel){
@@ -6900,6 +6812,99 @@
   syncEasyloadRefreshPreview();
   paginatedHistorySections.forEach(syncPaginatedHistoryTable);
 
+  // Dynamic Product Restocks Modal Handling
+  const productRestocksModal = document.getElementById("productRestocksModal");
+  const restocksTableBody = document.getElementById("restocksTableBody");
+  const restocksEmptyState = document.getElementById("restocksEmptyState");
+  const restocksTable = document.getElementById("restocksTable");
+  const restocksProductTitle = document.getElementById("restocksProductTitle");
+  const restocksProductMeta = document.getElementById("restocksProductMeta");
+
+  const closeRestocksModal = () => {
+    if (productRestocksModal) {
+      productRestocksModal.classList.remove("show");
+    }
+  };
+
+  document.querySelectorAll("[data-restocks-close]").forEach(btn => {
+    btn.addEventListener("click", closeRestocksModal);
+  });
+
+  if (productRestocksModal) {
+    productRestocksModal.addEventListener("click", (evt) => {
+      if (evt.target === productRestocksModal) {
+        closeRestocksModal();
+      }
+    });
+  }
+
+  document.addEventListener("click", (evt) => {
+    const btn = evt.target.closest(".view-restocks-btn");
+    if (!btn) return;
+    evt.preventDefault();
+
+    const productId = btn.dataset.productId;
+    const productName = btn.dataset.productName;
+    const productBrand = btn.dataset.productBrand || "No Brand";
+    const productCategory = btn.dataset.productCategory || "Uncategorized";
+    const productQty = btn.dataset.productQty || "0";
+
+    if (restocksProductTitle) restocksProductTitle.textContent = productName;
+    if (restocksProductMeta) {
+      restocksProductMeta.innerHTML = `${productBrand} &middot; ${productCategory} &middot; On Hand: <strong style="color: #fff;">${productQty} units</strong>`;
+    }
+
+    if (restocksTableBody) {
+      restocksTableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--muted);">Loading restock history...</td></tr>`;
+    }
+    if (restocksTable) restocksTable.hidden = false;
+    if (restocksEmptyState) restocksEmptyState.hidden = true;
+
+    if (productRestocksModal) {
+      productRestocksModal.classList.add("show");
+    }
+
+    fetch(`/manager/products/${productId}/purchases`, {
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "Accept": "application/json"
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === "success" && data.entries && data.entries.length > 0) {
+        let html = "";
+        data.entries.forEach((entry, idx) => {
+          const dateStr = entry.batch_date ? new Date(entry.batch_date).toLocaleDateString("en-US", {
+            year: "numeric", month: "short", day: "numeric"
+          }) : "-";
+          const totalSpend = (Number(entry.quantity) * Number(entry.purchase_rate)).toFixed(2);
+          html += `
+            <tr>
+              <td class="product-sr-cell">${idx + 1}</td>
+              <td>${dateStr}</td>
+              <td><strong style="color: #fff;">${entry.quantity}</strong> units</td>
+              <td>PKR ${Number(entry.purchase_rate).toFixed(2)}</td>
+              <td><strong style="color: var(--accent-2);">PKR ${totalSpend}</strong></td>
+              <td>PKR ${Number(entry.sale_price).toFixed(2)}</td>
+            </tr>
+          `;
+        });
+        if (restocksTableBody) restocksTableBody.innerHTML = html;
+        if (restocksTable) restocksTable.hidden = false;
+        if (restocksEmptyState) restocksEmptyState.hidden = true;
+      } else {
+        if (restocksTable) restocksTable.hidden = true;
+        if (restocksEmptyState) restocksEmptyState.hidden = false;
+      }
+    })
+    .catch(err => {
+      console.error("Failed to fetch purchases:", err);
+      if (restocksTableBody) {
+        restocksTableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--danger);">Failed to load history.</td></tr>`;
+      }
+    });
+  });
 
 </script>
 
