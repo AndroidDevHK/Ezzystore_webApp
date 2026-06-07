@@ -2215,3 +2215,142 @@ def get_customer_history(customer_id):
     
     history = CustomerLedger.get_history(db, shop["id"], customer_id)
     return jsonify({"status": "success", "history": history})
+
+
+@manager_bp.route("/api/sales/<int:sale_id>/items", methods=["GET"])
+@manager_required
+def api_sale_items(sale_id):
+    db = get_db()
+    shop = _get_manager_shop(db)
+    sale, sale_items = Sale.get_with_items(db, shop["id"], sale_id)
+    if not sale:
+        return jsonify({"status": "failed", "error": "Sale not found"}), 404
+    
+    # Get current balance for customer if applicable
+    current_balance = 0.0
+    if sale["customer_id"]:
+        current_balance = CustomerLedger.get_balance(db, shop["id"], sale["customer_id"])
+
+    return_items = []
+    for item in sale_items:
+        if item["remaining_quantity"] > 0:
+            return_items.append({
+                "id": item["id"],
+                "product_id": item["product_id"],
+                "product_name": item["product_name"],
+                "quantity": item["quantity"],
+                "unit_price": item["unit_price"],
+                "remaining_quantity": item["remaining_quantity"]
+            })
+            
+    return jsonify({
+        "status": "success",
+        "sale_id": sale_id,
+        "customer_id": sale["customer_id"],
+        "customer_name": sale["customer_name"],
+        "current_balance": current_balance,
+        "items": return_items
+    })
+
+
+@manager_bp.route("/api/sales/return/record", methods=["POST"])
+@manager_required
+def api_record_sale_return():
+    db = get_db()
+    shop = _get_manager_shop(db)
+    
+    sale_id_raw = request.form.get("sale_id")
+    try:
+        sale_id = int(sale_id_raw)
+    except (TypeError, ValueError):
+        return jsonify({"status": "failed", "error": "Invalid sale reference"}), 400
+
+    sale, sale_items = Sale.get_with_items(db, shop["id"], sale_id)
+    if not sale or sale["sale_type"] != "sale":
+        return jsonify({"status": "failed", "error": "Invalid sale"}), 400
+
+    item_ids = request.form.getlist("return_sale_item_id[]")
+    return_qtys = request.form.getlist("return_quantity[]")
+    
+    if not item_ids or len(item_ids) != len(return_qtys):
+        return jsonify({"status": "failed", "error": "Invalid items submitted"}), 400
+
+    revised_pending_amount = request.form.get("revised_pending_amount", "")
+    cash_refunded = request.form.get("cash_refunded", "")
+    
+    try:
+        revised_pending_amount = float(revised_pending_amount) if revised_pending_amount else 0.0
+        cash_refunded = float(cash_refunded) if cash_refunded else 0.0
+    except ValueError:
+        return jsonify({"status": "failed", "error": "Invalid financial amounts"}), 400
+
+    # Validate items and quantities
+    return_entries = []
+    for idx in range(len(item_ids)):
+        try:
+            item_id = int(item_ids[idx])
+            qty = int(return_qtys[idx])
+        except ValueError:
+            return jsonify({"status": "failed", "error": "Invalid quantity"}), 400
+            
+        original_item = next((i for i in sale_items if i["id"] == item_id), None)
+        if not original_item:
+            return jsonify({"status": "failed", "error": "Item not found in sale"}), 400
+            
+        if qty <= 0 or qty > original_item["remaining_quantity"]:
+            return jsonify({"status": "failed", "error": f"Invalid return quantity for {original_item['product_name']}"}), 400
+            
+        return_entries.append({
+            "product_id": original_item["product_id"],
+            "quantity": qty,
+            "unit_price": original_item["unit_price"],
+            "unit_cost": original_item["unit_cost"],
+            "sale_item_id": original_item["id"]
+        })
+
+    if not return_entries:
+        return jsonify({"status": "failed", "error": "No items selected to return"}), 400
+
+    try:
+        # Create return sale record
+        return_sale_id = Sale.record(
+            db,
+            shop["id"],
+            "return",
+            return_entries,
+            payment_method=sale["payment_method"],
+            customer_id=sale["customer_id"],
+            reference_sale_id=sale["id"],
+        )
+
+        for entry in return_entries:
+            # Update returned quantity in original sale
+            db.execute(
+                "UPDATE sale_items SET returned_quantity = returned_quantity + ?, returned_at = datetime('now') WHERE id = ?",
+                (entry["quantity"], entry["sale_item_id"])
+            )
+            # Add stock back
+            Product.adjust_quantity(db, shop["id"], entry["product_id"], entry["quantity"])
+
+        # Handle financials
+        if sale["customer_id"]:
+            current_balance = CustomerLedger.get_balance(db, shop["id"], sale["customer_id"])
+            adjustment = current_balance - revised_pending_amount
+            
+            if adjustment > 0:
+                # Debt reduced by adjustment (Treat as if they paid)
+                CustomerLedger.record_payment(db, shop["id"], sale["customer_id"], adjustment, f"Debt offset by Return #{return_sale_id}")
+            elif adjustment < 0:
+                # Debt increased (e.g. penalty)
+                CustomerLedger.record_pending_amount(db, shop["id"], sale["customer_id"], return_sale_id, abs(adjustment))
+                
+        if cash_refunded > 0:
+            SystemCashEntry.add_entry(
+                db, shop["id"], cash_refunded, "remove", f"Cash refund for Return #{return_sale_id}", cash_bucket=sale["payment_method"]
+            )
+
+        db.commit()
+        return jsonify({"status": "success", "message": "Sale returned successfully."})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"status": "failed", "error": str(e)}), 500

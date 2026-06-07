@@ -161,7 +161,7 @@ body::after {
 .field {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-start !important; width: 100% !important; text-align: left !important;
   gap: 8px;
 }
 

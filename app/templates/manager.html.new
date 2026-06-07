@@ -1,0 +1,6 @@
+{% extends "manager_layout.html" %}
+{% block manager_content %}
+  {% if active_page == 'product_management' %}{% set active_page_label = 'Product Management' %}{% endif %}
+  {% include 'manager/product_management.html' %}
+{% endif %}
+{% endblock %}

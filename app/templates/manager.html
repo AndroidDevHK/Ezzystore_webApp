@@ -579,9 +579,9 @@
                     <td class="bold">{{ insight.name }}</td>
                     <td>
                       {% if insight.phone %}
-                        <a href="https://wa.me/{{ insight.phone|replace('+', '')|replace(' ', '') }}" target="_blank" class="row-center gap-1 link">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                          {{ insight.phone }}
+                        <a href="https://wa.me/{{ insight.phone|replace('+', '')|replace(' ', '') }}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; color: white; text-decoration: none; width: fit-content;">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: #25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                          <span style="display: inline-block; transform: translateY(1px);">{{ insight.phone }}</span>
                         </a>
                       {% else %}
                         -
@@ -699,6 +699,16 @@
             <div class="confirm-row">
               <span class="confirm-label">Total amount</span>
               <span class="confirm-value" id="confirmTotal">PKR 0.00</span>
+            </div>
+            <div class="confirm-row" id="confirmAmountPaidRow" style="display: none; flex-direction: column; gap: 8px;">
+               <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                 <span class="confirm-label">Amount Paid</span>
+                 <input type="number" id="confirmAmountPaidInput" class="field" style="width: 120px; text-align: right; margin:0; padding: 4px 8px;" min="0" step="1">
+               </div>
+               <div style="display: flex; justify-content: space-between; width: 100%;">
+                 <span class="confirm-label" style="font-size: 12px; color: var(--muted);">Pending (Ledger)</span>
+                 <span class="confirm-value" id="confirmPendingAmount" style="color: var(--danger); font-size: 13px;">PKR 0.00</span>
+               </div>
             </div>
             <div class="confirm-row confirm-profit-row">
               <span class="confirm-label">Profit</span>
@@ -1803,6 +1813,87 @@
 
 </div>
 
+
+
+<!-- Sale Return Modal -->
+<div class="modal-backdrop" id="saleReturnModal">
+  <div class="modal modal-wide">
+    <div class="modal-head">
+      <div>
+        <p class="modal-title">Return Sale Items</p>
+        <p class="modal-sub">Select quantities to return from sale <strong id="saleReturnTitleId"></strong>.</p>
+      </div>
+      <button class="icon-btn" type="button" onclick="document.getElementById('saleReturnModal').classList.remove('show')">&times;</button>
+    </div>
+    <div class="modal-body modal-body-scroll">
+      <form id="saleReturnForm" class="wallet-profit-form">
+        <input type="hidden" name="sale_id" id="returnSaleId">
+        <input type="hidden" id="returnCustomerId">
+        
+        <div class="sale-items-table">
+          <table class="table sale-items-table-inner">
+            <thead>
+              <tr>
+                <th>Sr.</th>
+                <th>Product</th>
+                <th>Total Qty</th>
+                <th>Return Qty</th>
+                <th>Select</th>
+              </tr>
+            </thead>
+            <tbody id="saleReturnBody"></tbody>
+          </table>
+        </div>
+
+        <button type="button" class="btn btn-primary sale-save-btn" id="openSaleReturnConfirm" disabled>
+          <span class="btn-ic">&#x21ba;</span>
+          <span>Proceed to Return</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Sale Return Confirm Modal -->
+<div class="modal-backdrop brand-modal" id="saleReturnConfirmModal" style="z-index: 1060;">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <p class="modal-title">Confirm Return</p>
+        <p class="modal-sub">Review financials before finalizing.</p>
+      </div>
+      <button class="icon-btn" type="button" onclick="document.getElementById('saleReturnConfirmModal').classList.remove('show')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="confirm-grid">
+        <div class="confirm-row">
+           <span class="confirm-label">Original Pending Amount</span>
+           <span class="confirm-value" id="returnOriginalPending">PKR 0.00</span>
+        </div>
+        <div class="confirm-row">
+           <span class="confirm-label">Return Value</span>
+           <span class="confirm-value" id="returnValueAmount" style="color: var(--success);">PKR 0.00</span>
+        </div>
+        <div class="confirm-row" style="flex-direction: column; gap: 8px;">
+           <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+             <span class="confirm-label">Revised Pending Amount</span>
+             <input type="number" id="returnRevisedPendingInput" class="field" style="width: 120px; text-align: right; margin:0; padding: 4px 8px;" min="0" step="1" value="0">
+           </div>
+           <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+             <span class="confirm-label">Cash Refunded (Paid Out)</span>
+             <input type="number" id="returnCashRefundedInput" class="field" style="width: 120px; text-align: right; margin:0; padding: 4px 8px;" min="0" step="1" value="0">
+           </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-soft" type="button" onclick="document.getElementById('saleReturnConfirmModal').classList.remove('show')">Cancel</button>
+      <button class="btn btn-primary" type="button" id="submitSaleReturnBtn">Confirm Return</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="modal-backdrop" id="saleDetailsModal">
   <div class="modal modal-wide">
     <div class="modal-head">
@@ -1814,6 +1905,7 @@
     </div>
     <div class="modal-body modal-body-scroll">
       <form method="post" action="{{ url_for('manager.record_sale') }}" id="multiSaleForm" class="wallet-profit-form">
+        <input type="hidden" name="pending_amount" id="multiSalePendingAmount" value="0">
         <input type="hidden" name="sale_type" value="sale">
 
         <div class="customer-picker-field">
@@ -1968,7 +2060,7 @@
 
         <span>Phone (optional)</span>
 
-        <input name="customer_phone" id="customerCreatePhone">
+        <input name="customer_phone" id="customerCreatePhone" value="+92" maxlength="13" placeholder="e.g. +923001234567" pattern="^\+923\d{9}$" title="Pakistani phone number must start with +923 followed by 9 digits">
 
       </label>
 
@@ -2911,7 +3003,7 @@
 
 <!-- Customer Ledger Modals -->
 <div class="modal-backdrop" id="addCustomerLedgerModal">
-  <form class="modal" method="post" action="{{ url_for('manager.add_customer') }}">
+  <div class="modal">
     <div class="modal-head">
       <div>
         <p class="modal-title">Add Customer</p>
@@ -2919,25 +3011,25 @@
       </div>
       <button class="icon-btn" type="button" onclick="document.getElementById('addCustomerLedgerModal').classList.remove('show')">&times;</button>
     </div>
-    <div class="modal-body">
+    <form class="modal-body" method="post" action="{{ url_for('manager.add_customer') }}">
       <label class="field">
         <span>Name</span>
         <input name="name" required placeholder="Ali Khan">
       </label>
       <label class="field">
         <span>Phone (WhatsApp)</span>
-        <input name="phone" placeholder="e.g. +923001234567">
+        <input name="phone" value="+92" maxlength="13" placeholder="e.g. +923001234567" pattern="^\+923\d{9}$" title="Pakistani phone number must start with +923 followed by 9 digits">
       </label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-soft" type="button" onclick="document.getElementById('addCustomerLedgerModal').classList.remove('show')">Cancel</button>
-      <button class="btn btn-primary" type="submit">Add Customer</button>
-    </div>
-  </form>
+      <div class="modal-actions">
+        <button class="btn btn-soft" type="button" onclick="document.getElementById('addCustomerLedgerModal').classList.remove('show')">Cancel</button>
+        <button class="btn btn-primary" type="submit">Add Customer</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div class="modal-backdrop" id="payDebtModal">
-  <form class="modal" method="post" id="payDebtForm">
+  <div class="modal">
     <div class="modal-head">
       <div>
         <p class="modal-title">Receive Payment</p>
@@ -2945,7 +3037,7 @@
       </div>
       <button class="icon-btn" type="button" onclick="document.getElementById('payDebtModal').classList.remove('show')">&times;</button>
     </div>
-    <div class="modal-body">
+    <form class="modal-body" method="post" id="payDebtForm">
       <div class="empty mini" style="margin-bottom: 15px; text-align: left; padding: 15px;">
         <span class="muted">Current Balance Due:</span>
         <strong style="color: var(--danger); font-size: 1.2rem; display: block;" id="payDebtBalanceDue"></strong>
@@ -2958,13 +3050,49 @@
         <span>Note (Optional)</span>
         <input name="note" placeholder="Cash received">
       </label>
+      <div class="modal-actions">
+        <button class="btn btn-soft" type="button" onclick="document.getElementById('payDebtModal').classList.remove('show')">Cancel</button>
+        <button class="btn btn-primary" type="submit">Record Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- History Items Detail Modal -->
+<div class="modal-backdrop brand-modal" id="customerHistoryItemsModal" style="z-index: 1050;">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <p class="modal-title">Purchased Items</p>
+        <p class="modal-sub">Detailed breakdown of the sale.</p>
+      </div>
+      <button class="icon-btn" type="button" onclick="document.getElementById('customerHistoryItemsModal').classList.remove('show')">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 16px;">
+      <ul id="customerHistoryItemsList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+      </ul>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-soft" type="button" onclick="document.getElementById('payDebtModal').classList.remove('show')">Cancel</button>
-      <button class="btn btn-primary" type="submit">Record Payment</button>
+      <button class="btn btn-primary" style="width: 100%;" type="button" onclick="document.getElementById('customerHistoryItemsModal').classList.remove('show')">Close</button>
     </div>
-  </form>
+  </div>
 </div>
+<script>
+function showCustomerHistoryItems(btn) {
+  const itemsJson = btn.getAttribute("data-items");
+  if(!itemsJson) return;
+  const items = JSON.parse(itemsJson);
+  const listEl = document.getElementById("customerHistoryItemsList");
+  listEl.innerHTML = "";
+  items.forEach(item => {
+    const li = document.createElement("li");
+    li.style.cssText = "display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;";
+    li.innerHTML = `<span style="font-weight: 600;">${item.name}</span> <span style="color: var(--accent); font-weight: 700;">x${item.quantity}</span>`;
+    listEl.appendChild(li);
+  });
+  document.getElementById("customerHistoryItemsModal").classList.add("show");
+}
+</script>
 
 <div class="modal-backdrop" id="customerHistoryModal">
   <div class="modal modal-wide">
@@ -2989,7 +3117,7 @@
             </tr>
           </thead>
           <tbody id="historyTableBody">
-            <tr><td colspan="6" style="text-align: center; padding: 20px;">Loading history...</td></tr>
+            <tr><td colspan="7" style="text-align: center; padding: 20px;">Loading history...</td></tr>
           </tbody>
         </table>
       </div>
@@ -4748,6 +4876,31 @@
     if(confirmItemsList){
       confirmItemsList.setAttribute("hidden", "");
     }
+
+    // Pending amount UI logic
+    const hasCustomer = customerText !== "Walk-in customer" && customerText !== "Select customer";
+    const confirmAmountPaidRow = document.getElementById("confirmAmountPaidRow");
+    const confirmAmountPaidInput = document.getElementById("confirmAmountPaidInput");
+    const confirmPendingAmount = document.getElementById("confirmPendingAmount");
+    
+    if(confirmAmountPaidRow && confirmAmountPaidInput && confirmPendingAmount){
+      if(hasCustomer){
+        confirmAmountPaidRow.style.display = "flex";
+        confirmAmountPaidInput.value = data.totalAmount;
+        confirmAmountPaidInput.max = data.totalAmount;
+        confirmPendingAmount.textContent = "PKR 0.00";
+        
+        confirmAmountPaidInput.oninput = (e) => {
+           let paid = Number(e.target.value);
+           if(paid > data.totalAmount) { paid = data.totalAmount; e.target.value = paid; }
+           if(paid < 0 || !Number.isFinite(paid)) { paid = 0; }
+           const pending = data.totalAmount - paid;
+           confirmPendingAmount.textContent = formatMoney(pending);
+        };
+      } else {
+        confirmAmountPaidRow.style.display = "none";
+      }
+    }
   };
 
   const validateSaleForConfirmation = ()=>{
@@ -4780,6 +4933,21 @@
     if(!saleForm){
       return;
     }
+    
+    const confirmAmountPaidRow = document.getElementById("confirmAmountPaidRow");
+    const confirmAmountPaidInput = document.getElementById("confirmAmountPaidInput");
+    const multiSalePendingAmount = document.getElementById("multiSalePendingAmount");
+    const data = getConfirmData();
+    
+    if (multiSalePendingAmount) {
+       if (confirmAmountPaidRow && confirmAmountPaidRow.style.display !== "none" && confirmAmountPaidInput) {
+          const paid = Number(confirmAmountPaidInput.value) || 0;
+          multiSalePendingAmount.value = Math.max(0, data.totalAmount - paid);
+       } else {
+          multiSalePendingAmount.value = 0;
+       }
+    }
+    
     confirmSaleSubmit.disabled = true;
     const formData = new FormData(saleForm);
     try{
@@ -6696,18 +6864,19 @@
     document.getElementById('historyCustomerName').innerText = name;
     document.getElementById('customerHistoryModal').classList.add('show');
     const tbody = document.getElementById('historyTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Loading history...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">Loading history...</td></tr>';
     
     fetch('/manager/api/customer/' + id + '/history')
       .then(res => res.json())
       .then(data => {
         if (data.status === 'success') {
           if (data.history.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--muted);">No history available.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--muted);">No history available.</td></tr>';
             return;
           }
           let html = '';
-          data.history.forEach(row => {
+          data.history.forEach((row, index) => {
+            const idx = data.history.length - index;
             const date = new Date(row.created_at + 'Z').toLocaleString('en-US', {
               day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
             });
@@ -6717,8 +6886,9 @@
             let itemsHtml = '-';
             if (row.sale_items && row.sale_items.length > 0) {
               const totalItems = row.sale_items.reduce((acc, curr) => acc + curr.quantity, 0);
-              const itemsList = row.sale_items.map(i => i.quantity + 'x ' + i.name).join('&#10;');
-              itemsHtml = `<span title="${itemsList}" style="cursor: help; text-decoration: underline dotted;">${totalItems} items ℹ️</span>`;
+              // Store items string safely in dataset for robust modal rendering
+              const safeItemsJSON = JSON.stringify(row.sale_items).replace(/"/g, '&quot;');
+              itemsHtml = `<button type="button" class="btn btn-soft btn-mini" style="font-size: 11px; padding: 4px 8px; font-weight: bold;" onclick="showCustomerHistoryItems(this)" data-items="${safeItemsJSON}">${totalItems} items ℹ️</button>`;
             }
             
             let saleTotal = row.sale_total_amount ? 'PKR ' + row.sale_total_amount.toFixed(2) : '-';
@@ -6726,6 +6896,7 @@
             let amtDue = row.amount_due > 0 ? '<strong style="color: var(--danger);">PKR ' + row.amount_due.toFixed(2) + '</strong>' : 'PKR 0.00';
             
             html += `<tr>
+              <td class="muted">${idx}</td>
               <td>${date}</td>
               <td>${type}</td>
               <td>${itemsHtml}</td>
@@ -6761,9 +6932,194 @@
   })();
 
 
+
+  // Enforce +92 prefix for phone inputs
+  document.querySelectorAll('input[name="phone"], input[name="customer_phone"]').forEach(input => {
+    input.addEventListener('input', function(e) {
+      if (this.value.indexOf('+92') !== 0) {
+        // If they messed up the prefix, reset it and try to salvage the digits they typed
+        let digits = this.value.replace(/[^0-9]/g, '');
+        if (digits.startsWith('92')) digits = digits.substring(2);
+        else if (digits.startsWith('0')) digits = digits.substring(1);
+        this.value = '+92' + digits;
+      }
+    });
+    
+    input.addEventListener('keydown', function(e) {
+      // Prevent backspacing into the +92 prefix
+      if (e.key === 'Backspace' && this.selectionStart <= 3 && this.selectionEnd === this.selectionStart) {
+        e.preventDefault();
+      }
+      // Prevent moving cursor before +92
+      if (e.key === 'ArrowLeft' && this.selectionStart <= 3 && this.selectionEnd === this.selectionStart) {
+        e.preventDefault();
+      }
+    });
+    
+    input.addEventListener('click', function(e) {
+      // If user clicks before +92, move cursor to the end of +92
+      if (this.selectionStart < 3) {
+        this.setSelectionRange(3, 3);
+      }
+    });
+  });
+
 </script>
 
+<script>
+// --- SALE RETURN MODAL LOGIC ---
 
+let _currentReturnItems = [];
+
+async function openSaleReturnModal(saleId) {
+  document.getElementById('customerHistoryItemsModal')?.classList.remove('show');
+  document.getElementById('customerHistoryModal')?.classList.remove('show');
+  
+  const tbody = document.getElementById("saleReturnBody");
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px;">Loading sale items...</td></tr>`;
+  document.getElementById("saleReturnTitleId").textContent = "#" + saleId;
+  document.getElementById("returnSaleId").value = saleId;
+  
+  document.getElementById("saleReturnModal").classList.add('show');
+  
+  try {
+    const res = await fetch(`/manager/api/sales/${saleId}/items`);
+    const data = await res.json();
+    if(data.status !== "success") {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">${data.error}</td></tr>`;
+      return;
+    }
+    
+    document.getElementById("returnCustomerId").value = data.customer_id || "";
+    document.getElementById("openSaleReturnConfirm").dataset.originalPending = data.current_balance || 0;
+    
+    _currentReturnItems = data.items;
+    
+    if(data.items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 20px;">All items have been completely returned.</td></tr>`;
+      return;
+    }
+    
+    let html = "";
+    data.items.forEach((item, i) => {
+      html += `
+      <tr data-return-item-id="${item.id}" data-unit-price="${item.unit_price}">
+        <td>${i+1}</td>
+        <td>${item.product_name} <br> <span class="muted tiny">PKR ${item.unit_price} each</span></td>
+        <td>${item.quantity}</td>
+        <td>
+          <input type="number" class="field return-qty-input" 
+            style="width: 70px; margin: 0; padding: 4px;"
+            min="1" max="${item.remaining_quantity}" value="${item.remaining_quantity}" disabled>
+        </td>
+        <td>
+          <input type="checkbox" class="return-item-check" onchange="toggleReturnItem(this)">
+        </td>
+      </tr>`;
+    });
+    tbody.innerHTML = html;
+    calculateReturnButtonState();
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Network error fetching items.</td></tr>`;
+  }
+}
+
+function toggleReturnItem(checkbox) {
+  const tr = checkbox.closest('tr');
+  const qtyInput = tr.querySelector('.return-qty-input');
+  qtyInput.disabled = !checkbox.checked;
+  calculateReturnButtonState();
+}
+
+function calculateReturnButtonState() {
+  const tbody = document.getElementById("saleReturnBody");
+  const checked = tbody.querySelectorAll('.return-item-check:checked');
+  const btn = document.getElementById("openSaleReturnConfirm");
+  btn.disabled = checked.length === 0;
+}
+
+document.getElementById("saleReturnBody")?.addEventListener('input', (e) => {
+  if(e.target.classList.contains('return-qty-input')) {
+    calculateReturnButtonState();
+  }
+});
+
+document.getElementById("openSaleReturnConfirm")?.addEventListener('click', () => {
+  const tbody = document.getElementById("saleReturnBody");
+  const checked = tbody.querySelectorAll('.return-item-check:checked');
+  let returnValue = 0;
+  
+  checked.forEach(chk => {
+    const tr = chk.closest('tr');
+    const price = parseFloat(tr.getAttribute('data-unit-price'));
+    const qty = parseInt(tr.querySelector('.return-qty-input').value) || 0;
+    returnValue += price * qty;
+  });
+  
+  const originalPending = parseFloat(document.getElementById("openSaleReturnConfirm").dataset.originalPending || 0);
+  
+  document.getElementById("returnOriginalPending").textContent = "PKR " + originalPending.toFixed(2);
+  document.getElementById("returnValueAmount").textContent = "PKR " + returnValue.toFixed(2);
+  
+  let suggestedPending = originalPending - returnValue;
+  let suggestedCash = 0;
+  
+  if (suggestedPending < 0) {
+    suggestedCash = Math.abs(suggestedPending);
+    suggestedPending = 0;
+  }
+  
+  document.getElementById("returnRevisedPendingInput").value = suggestedPending.toFixed(0);
+  document.getElementById("returnCashRefundedInput").value = suggestedCash.toFixed(0);
+  
+  document.getElementById('saleReturnModal').classList.remove('show');
+  document.getElementById('saleReturnConfirmModal').classList.add('show');
+});
+
+document.getElementById("submitSaleReturnBtn")?.addEventListener('click', async () => {
+  const btn = document.getElementById("submitSaleReturnBtn");
+  btn.disabled = true;
+  btn.textContent = "Processing...";
+  
+  const saleId = document.getElementById("returnSaleId").value;
+  const tbody = document.getElementById("saleReturnBody");
+  const checked = tbody.querySelectorAll('.return-item-check:checked');
+  
+  let formData = new FormData();
+  formData.append("sale_id", saleId);
+  formData.append("revised_pending_amount", document.getElementById("returnRevisedPendingInput").value);
+  formData.append("cash_refunded", document.getElementById("returnCashRefundedInput").value);
+  
+  checked.forEach(chk => {
+    const tr = chk.closest('tr');
+    const itemId = tr.getAttribute('data-return-item-id');
+    const qty = tr.querySelector('.return-qty-input').value;
+    formData.append("return_sale_item_id[]", itemId);
+    formData.append("return_quantity[]", qty);
+  });
+  
+  try {
+    const res = await fetch("/manager/api/sales/return/record", {
+      method: "POST",
+      body: formData
+    });
+    const data = await res.json();
+    if(data.status === "success") {
+      if(window.showToast) showToast(data.message, "success");
+      document.getElementById('saleReturnConfirmModal').classList.remove('show');
+      setTimeout(() => location.reload(), 1000); 
+    } else {
+      if(window.showToast) showToast(data.error, "error");
+      btn.disabled = false;
+      btn.textContent = "Confirm Return";
+    }
+  } catch(e) {
+    if(window.showToast) showToast("Network error.", "error");
+    btn.disabled = false;
+    btn.textContent = "Confirm Return";
+  }
+});
+</script>
 
 
 {% endblock %}

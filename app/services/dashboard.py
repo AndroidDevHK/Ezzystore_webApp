@@ -1169,20 +1169,19 @@ def _build_manager_context(db, shop, active_page: str, daily_report_day: str | N
         if purchase_total > 0:
             profit_pct = ((sale_total - purchase_total) / purchase_total) * 100
 
-        if total_items > 0:
-            customer_insights.append(
-                {
-                    "id": customer["id"],
-                    "name": customer["name"],
-                    "phone": customer["phone"],
-                    "item_count": total_items,
-                    "sale_total": sale_total,
-                    "purchase_total": purchase_total,
-                    "last_purchase": last_purchase,
-                    "profit_pct": profit_pct,
-                    "balance_due": CustomerLedger.get_balance(db, shop["id"], customer["id"]),
-                }
-            )
+        customer_insights.append(
+            {
+                "id": customer["id"],
+                "name": customer["name"],
+                "phone": customer["phone"],
+                "item_count": total_items,
+                "sale_total": sale_total,
+                "purchase_total": purchase_total,
+                "last_purchase": last_purchase,
+                "profit_pct": profit_pct,
+                "balance_due": CustomerLedger.get_balance(db, shop["id"], customer["id"]),
+            }
+        )
 
     return {
         "shop": shop,
