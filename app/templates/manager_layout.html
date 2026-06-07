@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Ezzystore • Manager{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css') }}">
+  {% block manager_css %}{% endblock %}
+{% endblock %}
+
+{% block body_class %}manager-body{% endblock %}
+
+{% block content %}
+<div class="manager-page">
+
+  <div class="drawer-backdrop" id="managerDrawerBackdrop" hidden></div>
+  <nav class="module-nav" id="managerDrawer" aria-label="Manager navigation">
+    <div class="drawer-head">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-mark">
+          <a href="{{ url_for('manager.dashboard') }}" class="sidebar-brand-link" aria-label="Open overview">
+            <img src="{{ url_for('static', filename='img/ezzystore-logo.png') }}" alt="Ezzystore logo">
+            <span>Ezzystore</span>
+          </a>
+        </div>
+        <p class="muted">Choose a section to continue.</p>
+      </div>
+      <button class="icon-btn drawer-close" type="button" id="closeManagerDrawer" aria-label="Close navigation">&times;</button>
+    </div>
+
+    <div class="sidebar-group">
+      <a href="{{ url_for('manager.dashboard') }}" class="{% if active_page == 'overview' %}active{% endif %}">Overview</a>
+    </div>
+
+    <div class="sidebar-group">
+      <p class="sidebar-group-label">Catalog</p>
+      <a href="{{ url_for('manager.product_management_page') }}" class="{% if active_page == 'product_management' %}active{% endif %}">Product Management</a>
+      <a href="{{ url_for('manager.stock_page') }}" class="{% if active_page == 'stock' %}active{% endif %}">Stock History</a>
+    </div>
+
+    <div class="sidebar-group">
+      <p class="sidebar-group-label">Sales</p>
+      <a href="{{ url_for('manager.daily_report_page') }}" class="{% if active_page == 'daily_report' %}active{% endif %}">Daily Report</a>
+      <a href="{{ url_for('manager.reports_page') }}" class="{% if active_page == 'reports' %}active{% endif %}">Sales Report</a>
+      <a href="{{ url_for('manager.customers_page') }}" class="{% if active_page == 'customers' %}active{% endif %}">Customer Ledger</a>
+    </div>
+
+    <div class="sidebar-group">
+      <p class="sidebar-group-label">Finance</p>
+      <a href="{{ url_for('manager.cash_history_page') }}" class="{% if active_page in ['cash_history', 'cash_history_detail'] %}active{% endif %}">Cash History</a>
+    </div>
+
+    <div class="sidebar-group">
+      <p class="sidebar-group-label">System</p>
+      <a href="{{ url_for('manager.settings_page') }}" class="{% if active_page == 'settings' %}active{% endif %}">Settings</a>
+    </div>
+
+    <div class="drawer-foot">
+      <div class="dashboard-user drawer-user">
+        <div class="dashboard-user-line">
+          <span class="user-label">Signed in as</span>
+          <span class="user-label">{{ session.username }}</span>
+        </div>
+        <a class="btn btn-ghost" href="{{ url_for('auth.logout') }}">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="manager-main">
+    <header class="manager-page-head">
+      <div class="manager-page-head-main">
+        <button class="drawer-toggle" type="button" data-open-manager-drawer aria-label="Open navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="manager-page-head-copy">
+          <p class="eyebrow">Manager Workspace</p>
+          <h2>{% block page_title %}Dashboard{% endblock %}</h2>
+        </div>
+      </div>
+      <a href="{{ url_for('manager.dashboard') }}" class="manager-page-head-logo-link" aria-label="Open overview">
+        <img class="manager-page-head-logo" src="{{ url_for('static', filename='img/ezzystore-logo.png') }}" alt="Ezzystore logo">
+      </a>
+    </header>
+
+    {% block manager_content %}{% endblock %}
+
+  </main>
+</div>
+{% endblock %}

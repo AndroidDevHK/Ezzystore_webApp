@@ -9,6 +9,7 @@ from .shop_settings import ShopSettings
 from .wallet_profit import WalletProfit
 from .system_cash_entry import SystemCashEntry
 from .service_transaction import ServiceTransaction
+from .customer_ledger import CustomerLedger
 
 def init_models(db):
     User.create_table(db)
@@ -42,6 +43,7 @@ def init_models(db):
     StockBatch.create_table(db)
     Customer.create_table(db)
     Sale.create_table(db)
+    CustomerLedger.create_table(db)
     ShopSettings.create_table(db)
     WalletProfit.create_table(db)
     SystemCashEntry.create_table(db)

@@ -1,20 +1,14 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ezzystore • Admin</title>
+{% extends "base.html" %}
 
-  <!-- Inter font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+{% block title %}Ezzystore • Admin{% endblock %}
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
-</head>
-<body class="admin-body">
+{% endblock %}
 
+{% block body_class %}admin-body{% endblock %}
+
+{% block content %}
 <div class="admin-page">
 
   <header class="admin-hero">
@@ -37,19 +31,6 @@
       <a class="btn btn-ghost" href="{{ url_for('auth.logout') }}">Logout</a>
     </div>
   </header>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="alerts">
-        {% for category, msg in messages %}
-          <div class="toast {{ category }}">
-            <div class="toast-ic">{% if category == "success" %}✓{% else %}!{% endif %}</div>
-            <div class="toast-text">{{ msg }}</div>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
 
   <section class="panel-grid">
     <article class="card cta-card">
@@ -207,9 +188,9 @@
   </section>
 
 </div>
+{% endblock %}
 
-<!-- ===================== MODALS ===================== -->
-
+{% block modals %}
 <!-- Create Shop -->
 <div class="modal-backdrop" id="shopCreateModal" aria-hidden="true">
   <div class="modal">
@@ -279,37 +260,10 @@
     </form>
   </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-  function openModal(id){
-    const el = document.getElementById(id);
-    el.classList.add("show");
-    el.setAttribute("aria-hidden","false");
-  }
-  function closeModal(id){
-    const el = document.getElementById(id);
-    el.classList.remove("show");
-    el.setAttribute("aria-hidden","true");
-  }
-
-  document.querySelectorAll("[data-open-modal]").forEach(btn=>{
-    btn.addEventListener("click", ()=> openModal(btn.dataset.openModal));
-  });
-
-  document.querySelectorAll("[data-close-modal]").forEach(btn=>{
-    btn.addEventListener("click", ()=> closeModal(btn.dataset.closeModal));
-  });
-
-  document.querySelectorAll(".modal-backdrop").forEach(bg=>{
-    bg.addEventListener("click",(e)=>{ if(e.target===bg) closeModal(bg.id); });
-  });
-
-  document.addEventListener("keydown",(e)=>{
-    if(e.key==="Escape"){
-      document.querySelectorAll(".modal-backdrop.show").forEach(m=> closeModal(m.id));
-    }
-  });
-
   document.querySelectorAll('[data-open-modal="managerAssignModal"]').forEach(btn=>{
     btn.addEventListener("click", ()=>{
       document.getElementById("assignShopId").value = btn.dataset.shopId;
@@ -317,6 +271,4 @@
     });
   });
 </script>
-
-</body>
-</html>
+{% endblock %}

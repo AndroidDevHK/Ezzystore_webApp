@@ -1,8 +1,3 @@
-{% extends "manager_layout.html" %}
-{% block manager_content %}
-  {% set active_page = active_page or 'overview' %}
-  {% set active_page_label = 'Overview' %}
-  {% if active_page == 'product_management' %}{% set active_page_label = 'Product Management' %}{% endif %}
   {% if active_page == 'stock' %}{% set active_page_label = 'Stock History' %}{% endif %}
   {% if active_page == 'sales' %}{% set active_page_label = 'Sell Product' %}{% endif %}
   {% if active_page == 'daily_report' %}{% set active_page_label = 'Daily Report' %}{% endif %}
@@ -17,7 +12,101 @@
   {% if active_page == 'settings' %}{% set active_page_label = 'Settings' %}{% endif %}
   {% set product_management_tab = manage_tab|default('products') %}
 
-{% block page_title %}{{ active_page_label }}{% endblock %}
+
+
+  <div class="drawer-backdrop" id="managerDrawerBackdrop" hidden></div>
+  <nav class="module-nav" id="managerDrawer" aria-label="Manager navigation">
+    <div class="drawer-head">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-mark">
+          <a href="{{ url_for('manager.dashboard') }}" class="sidebar-brand-link" aria-label="Open overview">
+            <img src="{{ url_for('static', filename='img/ezzystore-logo.png') }}" alt="Ezzystore logo">
+            <span>Ezzystore</span>
+          </a>
+        </div>
+        <p class="muted">Choose a section to continue.</p>
+      </div>
+      <button class="icon-btn drawer-close" type="button" id="closeManagerDrawer" aria-label="Close navigation">&times;</button>
+    </div>
+
+    <div class="sidebar-group">
+      <a href="{{ url_for('manager.dashboard') }}" class="{% if active_page == 'overview' %}active{% endif %}">Overview</a>
+    </div>
+
+    <div class="sidebar-group">
+      <p class="sidebar-group-label">Catalog</p>
+      <a href="{{ url_for('manager.product_management_page') }}" class="{% if active_page == 'product_management' %}active{% endif %}">Product Management</a>
+      <a href="{{ url_for('manager.stock_page') }}" class="{% if active_page == 'stock' %}active{% endif %}">Stock History</a>
+    </div>
+
+    <div class="sidebar-group">
+      <p class="sidebar-group-label">Sales</p>
+      <a href="{{ url_for('manager.daily_report_page') }}" class="{% if active_page == 'daily_report' %}active{% endif %}">Daily Report</a>
+      <a href="{{ url_for('manager.reports_page') }}" class="{% if active_page == 'reports' %}active{% endif %}">Sales Report</a>
+      <a href="{{ url_for('manager.customers_page') }}" class="{% if active_page == 'customers' %}active{% endif %}">Customer Ledger</a>
+    </div>
+
+    <div class="sidebar-group">
+      <p class="sidebar-group-label">Finance</p>
+      <a href="{{ url_for('manager.cash_history_page') }}" class="{% if active_page in ['cash_history', 'cash_history_detail'] %}active{% endif %}">Cash History</a>
+      <!-- <a href="{{ url_for('manager.profit_history_page') }}" class="{% if active_page in ['profit_history', 'profit_history_detail'] %}active{% endif %}">Profit History</a> -->
+    </div>
+
+    <div class="sidebar-group">
+      <p class="sidebar-group-label">System</p>
+      <a href="{{ url_for('manager.settings_page') }}" class="{% if active_page == 'settings' %}active{% endif %}">Settings</a>
+    </div>
+
+    <div class="drawer-foot">
+      <div class="dashboard-user drawer-user">
+        <div class="dashboard-user-line">
+          <span class="user-label">Signed in as</span>
+          <span class="user-label">{{ session.username }}</span>
+        </div>
+        <a class="btn btn-ghost" href="{{ url_for('auth.logout') }}">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  <div class="toast-portal" id="toastStack" aria-live="polite" aria-atomic="true" {% if not messages %}hidden{% endif %}>
+
+      {% if messages %}
+
+          {% for category, msg in messages %}
+
+            <div class="toast {{ category }}">
+
+              <div class="toast-ic">{% if category == "success" %}✓{% else %}!{% endif %}</div>
+
+              <div class="toast-text">{{ msg }}</div>
+
+            </div>
+
+          {% endfor %}
+
+      {% endif %}
+
+    </div>
+  {% endwith %}
+
+  <main class="manager-main">
+    <header class="manager-page-head">
+      <div class="manager-page-head-main">
+        <button class="drawer-toggle" type="button" data-open-manager-drawer aria-label="Open navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="manager-page-head-copy">
+          <p class="eyebrow">Manager Workspace</p>
+          <h2>{{ active_page_label }}</h2>
+        </div>
+      </div>
+      <a href="{{ url_for('manager.dashboard') }}" class="manager-page-head-logo-link" aria-label="Open overview">
+        <img class="manager-page-head-logo" src="{{ url_for('static', filename='img/ezzystore-logo.png') }}" alt="Ezzystore logo">
+      </a>
+    </header>
 
     {% if active_page == 'overview' %}
     <section class="dashboard-card card">
@@ -564,40 +653,31 @@
             <table class="table">
               <thead>
                 <tr>
-                  <th>#</th>
                   <th>Customer</th>
-                  <th>Contact</th>
-                  <th>Total Spent</th>
-                  <th>Balance Due</th>
-                  <th class="text-right">Action</th>
+                  <th>Purchased items</th>
+                  <th>Last purchase</th>
+                  <th>Sale value</th>
+                  <th>Purchase value</th>
+                  <th>Profit %</th>
                 </tr>
               </thead>
               <tbody>
                 {% for insight in customer_insights %}
                   <tr data-customer-row data-customer-filter="{{ (insight.name ~ ' ' ~ (insight.phone or '')) | lower }}">
-                    <td class="muted">{{ loop.index }}</td>
-                    <td class="bold">{{ insight.name }}</td>
                     <td>
-                      {% if insight.phone %}
-                        <a href="https://wa.me/{{ insight.phone|replace('+', '')|replace(' ', '') }}" target="_blank" class="row-center gap-1 link">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                          {{ insight.phone }}
-                        </a>
+                      <div class="customer-name">{{ insight.name }}</div>
+                      <small class="muted">{{ insight.phone or '-' }}</small>
+                    </td>
+                    <td>{{ insight.item_count or 0 }}</td>
+                    <td>{{ insight.last_purchase|human_datetime if insight.last_purchase else '-' }}</td>
+                    <td>PKR {{ '%.2f'|format(insight.sale_total or 0) }}</td>
+                    <td>PKR {{ '%.2f'|format(insight.purchase_total or 0) }}</td>
+                    <td>
+                      {% if insight.profit_pct is not none %}
+                        {{ '%.1f'|format(insight.profit_pct) }}%
                       {% else %}
                         -
                       {% endif %}
-                    </td>
-                    <td>PKR {{ '%.2f'|format(insight.sale_total or 0) }}</td>
-                    <td class="bold {% if insight.balance_due and insight.balance_due > 0 %}text-danger{% endif %}">
-                      PKR {{ '%.2f'|format(insight.balance_due or 0) }}
-                    </td>
-                    <td class="text-right">
-                      <div class="row-center gap-2" style="justify-content: flex-end;">
-                        {% if insight.balance_due and insight.balance_due > 0 %}
-                          <button class="btn btn-primary btn-mini" type="button" onclick="openPayDebtModal({{ insight.id }}, '{{ insight.name }}', {{ insight.balance_due }})">Receive Payment</button>
-                        {% endif %}
-                        <button class="btn btn-soft btn-mini" type="button" onclick="openCustomerHistoryModal({{ insight.id }}, '{{ insight.name }}', {{ insight.balance_due or 0 }})">View History</button>
-                      </div>
                     </td>
                   </tr>
                 {% endfor %}
@@ -1588,7 +1668,9 @@
 
 
 
+  </main>
 
+</div>
 
 <div class="modal-backdrop" id="stockPickerModal">
 
@@ -1834,11 +1916,6 @@
             <option value="counter">Counter Cash</option>
             <option value="online">Online Cash</option>
           </select>
-        </label>
-        
-        <label class="field field-inline" id="pendingAmountContainer" style="display: none; margin-top: 10px;">
-          <span>Pending Amount</span>
-          <input type="number" name="pending_amount" id="pendingAmount" min="0" step="1" value="0" style="width: 150px;">
         </label>
 
         <div class="sale-items-table" id="saleEntryContainer">
@@ -2378,12 +2455,11 @@
 </div>
 
 <div class="wallet-fab-stack">
-  {% if (active_page == 'product_management' and product_management_tab in ['categories', 'brands', 'products']) or active_page == 'customers' %}
+  {% if active_page == 'product_management' and product_management_tab in ['categories', 'brands', 'products'] %}
   <button
     class="wallet-fab wallet-fab-add"
     type="button"
     id="contextAddFab"
-    {% if active_page == 'customers' %}data-modal-open="addCustomerLedgerModal" onclick="document.getElementById('addCustomerLedgerModal')?.classList.add('show')"{% endif %}
     {% if product_management_tab == 'categories' %}data-modal-open="addCategoryModal"{% endif %}
     {% if product_management_tab == 'brands' %}data-modal-open="addBrandModal"{% endif %}
     {% if product_management_tab == 'products' %}data-modal-open="addProductModal" onclick="document.getElementById('addProductModal')?.classList.add('show')"{% endif %}
@@ -2907,95 +2983,6 @@
     }
   });
 </script>
-
-
-<!-- Customer Ledger Modals -->
-<div class="modal-backdrop" id="addCustomerLedgerModal">
-  <form class="modal" method="post" action="{{ url_for('manager.add_customer') }}">
-    <div class="modal-head">
-      <div>
-        <p class="modal-title">Add Customer</p>
-        <p class="modal-sub">Create a new customer for the ledger.</p>
-      </div>
-      <button class="icon-btn" type="button" onclick="document.getElementById('addCustomerLedgerModal').classList.remove('show')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <label class="field">
-        <span>Name</span>
-        <input name="name" required placeholder="Ali Khan">
-      </label>
-      <label class="field">
-        <span>Phone (WhatsApp)</span>
-        <input name="phone" placeholder="e.g. +923001234567">
-      </label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-soft" type="button" onclick="document.getElementById('addCustomerLedgerModal').classList.remove('show')">Cancel</button>
-      <button class="btn btn-primary" type="submit">Add Customer</button>
-    </div>
-  </form>
-</div>
-
-<div class="modal-backdrop" id="payDebtModal">
-  <form class="modal" method="post" id="payDebtForm">
-    <div class="modal-head">
-      <div>
-        <p class="modal-title">Receive Payment</p>
-        <p class="modal-sub">Clear debt for <strong id="payDebtCustomerName"></strong></p>
-      </div>
-      <button class="icon-btn" type="button" onclick="document.getElementById('payDebtModal').classList.remove('show')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="empty mini" style="margin-bottom: 15px; text-align: left; padding: 15px;">
-        <span class="muted">Current Balance Due:</span>
-        <strong style="color: var(--danger); font-size: 1.2rem; display: block;" id="payDebtBalanceDue"></strong>
-      </div>
-      <label class="field">
-        <span>Amount Received</span>
-        <input name="amount" id="payDebtAmount" type="number" min="1" step="1" required>
-      </label>
-      <label class="field">
-        <span>Note (Optional)</span>
-        <input name="note" placeholder="Cash received">
-      </label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-soft" type="button" onclick="document.getElementById('payDebtModal').classList.remove('show')">Cancel</button>
-      <button class="btn btn-primary" type="submit">Record Payment</button>
-    </div>
-  </form>
-</div>
-
-<div class="modal-backdrop" id="customerHistoryModal">
-  <div class="modal modal-wide">
-    <div class="modal-head">
-      <div>
-        <p class="modal-title">Customer History</p>
-        <p class="modal-sub">Ledger for <strong id="historyCustomerName"></strong></p>
-      </div>
-      <button class="icon-btn" type="button" onclick="document.getElementById('customerHistoryModal').classList.remove('show')">&times;</button>
-    </div>
-    <div class="modal-body modal-body-scroll" style="padding: 0;">
-      <div class="table-shell">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Date & Time</th>
-              <th>Type</th>
-              <th>Items Purchased</th>
-              <th>Sale Total</th>
-              <th>Amount Paid</th>
-              <th>Pending Added</th>
-            </tr>
-          </thead>
-          <tbody id="historyTableBody">
-            <tr><td colspan="6" style="text-align: center; padding: 20px;">Loading history...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script>
 
@@ -6681,89 +6668,10 @@
     });
   });
 
-
-  // Customer Ledger Functions
-  window.openPayDebtModal = function(id, name, balance) {
-    document.getElementById('payDebtCustomerName').innerText = name;
-    document.getElementById('payDebtBalanceDue').innerText = "PKR " + balance.toFixed(2);
-    document.getElementById('payDebtAmount').max = balance;
-    document.getElementById('payDebtAmount').value = balance;
-    document.getElementById('payDebtForm').action = "/manager/customer/" + id + "/pay";
-    document.getElementById('payDebtModal').classList.add('show');
-  };
-
-  window.openCustomerHistoryModal = function(id, name, balance) {
-    document.getElementById('historyCustomerName').innerText = name;
-    document.getElementById('customerHistoryModal').classList.add('show');
-    const tbody = document.getElementById('historyTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Loading history...</td></tr>';
-    
-    fetch('/manager/api/customer/' + id + '/history')
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          if (data.history.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--muted);">No history available.</td></tr>';
-            return;
-          }
-          let html = '';
-          data.history.forEach(row => {
-            const date = new Date(row.created_at + 'Z').toLocaleString('en-US', {
-              day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-            });
-            
-            let type = row.sale_id ? 'Sale (#' + row.sale_id + ')' : 'Debt Payment';
-            
-            let itemsHtml = '-';
-            if (row.sale_items && row.sale_items.length > 0) {
-              const totalItems = row.sale_items.reduce((acc, curr) => acc + curr.quantity, 0);
-              const itemsList = row.sale_items.map(i => i.quantity + 'x ' + i.name).join('&#10;');
-              itemsHtml = `<span title="${itemsList}" style="cursor: help; text-decoration: underline dotted;">${totalItems} items ℹ️</span>`;
-            }
-            
-            let saleTotal = row.sale_total_amount ? 'PKR ' + row.sale_total_amount.toFixed(2) : '-';
-            let amtPaid = row.amount_paid > 0 ? 'PKR ' + row.amount_paid.toFixed(2) : '-';
-            let amtDue = row.amount_due > 0 ? '<strong style="color: var(--danger);">PKR ' + row.amount_due.toFixed(2) + '</strong>' : 'PKR 0.00';
-            
-            html += `<tr>
-              <td>${date}</td>
-              <td>${type}</td>
-              <td>${itemsHtml}</td>
-              <td>${saleTotal}</td>
-              <td>${amtPaid}</td>
-              <td>${amtDue}</td>
-            </tr>`;
-          });
-          tbody.innerHTML = html;
-        }
-      });
-  };
-
-  // Toggle pending amount field if a customer is selected
-  (function() {
-    const saleCustomerLabelEl = document.getElementById('saleCustomerLabel');
-    const pendingAmountContainer = document.getElementById('pendingAmountContainer');
-    const pendingAmountInput = document.getElementById('pendingAmount');
-    
-    // Create an observer to watch for customer selection changes
-    const observer = new MutationObserver(function() {
-      if (saleCustomerLabelEl && saleCustomerLabelEl.innerText !== 'Select customer') {
-        pendingAmountContainer.style.display = 'inline-flex';
-      } else {
-        pendingAmountContainer.style.display = 'none';
-        pendingAmountInput.value = '0';
-      }
-    });
-    
-    if (saleCustomerLabelEl) {
-      observer.observe(saleCustomerLabelEl, { childList: true, characterData: true, subtree: true });
-    }
-  })();
-
-
 </script>
 
 
 
+</body>
 
-{% endblock %}
+</html>
