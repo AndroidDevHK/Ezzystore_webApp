@@ -18,6 +18,29 @@ from ..models.customer_ledger import CustomerLedger
 from ..time_utils import parse_utc_to_local
 
 manager_bp = Blueprint("manager", __name__)
+
+
+def _redirect_to_page(page_name):
+    page_map = {
+        "overview": "dashboard",
+        "products": "product_management_page",
+        "stock": "stock_page",
+        "sales": "sales_page",
+        "reports": "reports_page",
+        "daily_report": "daily_report_page",
+        "customers": "customers_page",
+        "brands": "brands_page",
+        "categories": "categories_page",
+        "settings": "settings_page",
+        "cash_history": "cash_history_page",
+        "profit_history": "profit_history_page",
+        "easyload_history": "easyload_history_page"
+    }
+    endpoint = page_map.get(page_name)
+    if endpoint:
+        return redirect(url_for(f"manager.{endpoint}"))
+    return redirect(url_for("manager.dashboard", page=page_name))
+
 PACKAGE_PROFIT_MARKER = "[package_profit]"
 
 
@@ -40,7 +63,7 @@ def _get_manager_shop(db):
     """, (session.get("user_id"),)).fetchone()
 
 
-from ..services.dashboard import _build_manager_context
+from ..services.dashboard import _build_manager_context, _safe_manager_return_url, _build_package_profit_note, _build_refresh_sale_note, _find_cash_history_day, _build_cash_history_day_breakdown
 
 
 @manager_bp.route("/", methods=["GET"])
@@ -2341,7 +2364,7 @@ def api_record_sale_return():
                 # Debt reduced by adjustment (Treat as if they paid)
                 CustomerLedger.record_payment(db, shop["id"], sale["customer_id"], adjustment, f"Debt offset by Return #{return_sale_id}")
             elif adjustment < 0:
-                # Debt increased (e.g. penalty)
+                # Debt increased
                 CustomerLedger.record_pending_amount(db, shop["id"], sale["customer_id"], return_sale_id, abs(adjustment))
                 
         if cash_refunded > 0:

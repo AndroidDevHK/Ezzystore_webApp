@@ -1826,7 +1826,7 @@
       <button class="icon-btn" type="button" onclick="document.getElementById('saleReturnModal').classList.remove('show')">&times;</button>
     </div>
     <div class="modal-body modal-body-scroll">
-      <form id="saleReturnForm" class="wallet-profit-form">
+      <form id="saleReturnForm" style="display: flex; flex-direction: column; gap: 16px;">
         <input type="hidden" name="sale_id" id="returnSaleId">
         <input type="hidden" id="returnCustomerId">
         
@@ -1845,10 +1845,12 @@
           </table>
         </div>
 
-        <button type="button" class="btn btn-primary sale-save-btn" id="openSaleReturnConfirm" disabled>
-          <span class="btn-ic">&#x21ba;</span>
-          <span>Proceed to Return</span>
-        </button>
+        <div class="modal-actions" style="justify-content: flex-end; margin-top: 16px;">
+          <button type="button" class="btn btn-primary" id="openSaleReturnConfirm" disabled>
+            <span class="btn-ic">&#x21ba;</span>
+            <span>Proceed to Return</span>
+          </button>
+        </div>
       </form>
     </div>
   </div>
