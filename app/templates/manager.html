@@ -3072,26 +3072,35 @@
       <ul id="customerHistoryItemsList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
       </ul>
     </div>
-    <div class="modal-actions">
-      <button class="btn btn-primary" style="width: 100%;" type="button" onclick="document.getElementById('customerHistoryItemsModal').classList.remove('show')">Close</button>
-    </div>
+    <div class="modal-actions" id="customerHistoryItemsActions" style="display: flex; gap: 8px;">
+        <button class="btn btn-soft" style="flex: 1;" type="button" onclick="document.getElementById('customerHistoryItemsModal').classList.remove('show')">Close</button>
+      </div>
   </div>
 </div>
 <script>
 function showCustomerHistoryItems(btn) {
-  const itemsJson = btn.getAttribute("data-items");
-  if(!itemsJson) return;
-  const items = JSON.parse(itemsJson);
-  const listEl = document.getElementById("customerHistoryItemsList");
-  listEl.innerHTML = "";
-  items.forEach(item => {
-    const li = document.createElement("li");
-    li.style.cssText = "display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;";
-    li.innerHTML = `<span style="font-weight: 600;">${item.name}</span> <span style="color: var(--accent); font-weight: 700;">x${item.quantity}</span>`;
-    listEl.appendChild(li);
-  });
-  document.getElementById("customerHistoryItemsModal").classList.add("show");
-}
+    const itemsJson = btn.getAttribute("data-items");
+    const saleId = btn.getAttribute("data-sale-id");
+    if(!itemsJson) return;
+    const items = JSON.parse(itemsJson);
+    const listEl = document.getElementById("customerHistoryItemsList");
+    listEl.innerHTML = "";
+    items.forEach(item => {
+      const li = document.createElement("li");
+      li.style.cssText = "display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;";
+      li.innerHTML = `<span style="font-weight: 600;">${item.name}</span> <span style="color: var(--accent); font-weight: 700;">x${item.quantity}</span>`;
+      listEl.appendChild(li);
+    });
+    
+    const actionsEl = document.getElementById("customerHistoryItemsActions");
+    if (actionsEl) {
+      actionsEl.innerHTML = `<button class="btn btn-soft" style="flex: 1;" type="button" onclick="document.getElementById('customerHistoryItemsModal').classList.remove('show')">Close</button>`;
+      if (saleId && saleId !== 'null' && saleId !== 'undefined' && saleId !== '') {
+        actionsEl.innerHTML += `<button class="btn btn-primary" style="flex: 1;" type="button" onclick="openSaleReturnModal(${saleId})">Return Sale</button>`;
+      }
+    }
+    document.getElementById("customerHistoryItemsModal").classList.add("show");
+  }
 </script>
 
 <div class="modal-backdrop" id="customerHistoryModal">
@@ -6888,7 +6897,7 @@ function showCustomerHistoryItems(btn) {
               const totalItems = row.sale_items.reduce((acc, curr) => acc + curr.quantity, 0);
               // Store items string safely in dataset for robust modal rendering
               const safeItemsJSON = JSON.stringify(row.sale_items).replace(/"/g, '&quot;');
-              itemsHtml = `<button type="button" class="btn btn-soft btn-mini" style="font-size: 11px; padding: 4px 8px; font-weight: bold;" onclick="showCustomerHistoryItems(this)" data-items="${safeItemsJSON}">${totalItems} items ℹ️</button>`;
+              itemsHtml = `<button type="button" class="btn btn-soft btn-mini" style="font-size: 11px; padding: 4px 8px; font-weight: bold;" onclick="showCustomerHistoryItems(this)" data-items="${safeItemsJSON}" data-sale-id="${row.sale_id || ''}">${totalItems} items ℹ️</button>`;
             }
             
             let saleTotal = row.sale_total_amount ? 'PKR ' + row.sale_total_amount.toFixed(2) : '-';
