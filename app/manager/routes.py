@@ -63,7 +63,7 @@ def _get_manager_shop(db):
     """, (session.get("user_id"),)).fetchone()
 
 
-from ..services.dashboard import _build_manager_context, _safe_manager_return_url, _build_package_profit_note, _build_refresh_sale_note, _find_cash_history_day, _build_cash_history_day_breakdown
+from ..services.dashboard import _build_manager_context
 
 
 @manager_bp.route("/", methods=["GET"])
@@ -2363,9 +2363,12 @@ def api_record_sale_return():
             if adjustment > 0:
                 # Debt reduced by adjustment (Treat as if they paid)
                 CustomerLedger.record_payment(db, shop["id"], sale["customer_id"], adjustment, f"Debt offset by Return #{return_sale_id}")
+                # Also update the original sale's amount_due so the UI is consistent
+                db.execute("UPDATE sales SET amount_due = MAX(0, amount_due - ?) WHERE id = ?", (adjustment, sale["id"]))
             elif adjustment < 0:
                 # Debt increased
                 CustomerLedger.record_pending_amount(db, shop["id"], sale["customer_id"], return_sale_id, abs(adjustment))
+                db.execute("UPDATE sales SET amount_due = amount_due + ? WHERE id = ?", (abs(adjustment), sale["id"]))
                 
         if cash_refunded > 0:
             SystemCashEntry.add_entry(
